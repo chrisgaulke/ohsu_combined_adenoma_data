@@ -97,6 +97,13 @@ library(vegan)
 options(stringsAsFactors = F)
 
 # IMPORT: DATA ------------------------------------------------------------
+#import sequence stats
+
+adenoma_sequence_stats.df <- read.table("/Users/cgaulke/Documents/research/ohsu_polyp_combined/data/polyp_combined_out/logs/filter_stats.txt",
+                                 sep = "\t",
+                                 row.names = 1,
+                                 header = T)
+
 
 #import data: ASV table
 adenoma_asv.df <- read.table("/Users/cgaulke/Documents/research/ohsu_polyp_combined/data/polyp_combined_out/sequence_table.txt",
@@ -111,7 +118,6 @@ adenoma_tax.df <- read.table("/Users/cgaulke/Documents/research/ohsu_polyp_combi
                            header = T,
                            row.names = NULL)
 
-
 # Because these data are combined it becomes a little tricky once we get to the
 # metadata so I will try to document everything I do here in good detail.
 
@@ -125,8 +131,11 @@ all_metadata.df <- read.table("/Users/cgaulke/Documents/research/ohsu_polyp_comb
                                  sep = "\t",
                                  header = T,
                                  row.names = 1)
+# DATA: Filter Data -------------------------------------------------------
 
 rownames(all_metadata.df) <- sapply(rownames(all_metadata.df),FUN = function(x) {(strsplit(x, split = "-")[[1]][2])})
+
+
 
 #gather information for filtering data
 adenoma_asv.names <- rownames(adenoma_asv.df)
@@ -299,6 +308,15 @@ rownames(combined_metadata) <- combined_metadata$file_name
 
 #now the metadata is ready to play nice with the rest of the data
 
+# the last thing we need to do is filter the sequence statistics to remove unused
+# sample data
+
+rownames(adenoma_sequence_stats.df) <- sapply(rownames(
+  adenoma_sequence_stats.df),
+    FUN = function(x) {(strsplit(x, split = "_")[[1]][1])})
+
+adenoma_sequence_stats.df <- adenoma_sequence_stats.df[which(
+  rownames(adenoma_sequence_stats.df) %in% rownames(combined_metadata)),]
 
 # DATA WRANGLE: FIX FILE HEADERS ----------------------------------------------
 
@@ -465,7 +483,26 @@ combined_metadata[which(combined_metadata$location %in% rc), "location"] <- "RC"
 combined_metadata[which(combined_metadata$location %in% tv), "location"] <- "TV"
 combined_metadata[which(combined_metadata$location %in% sgd), "location"] <- "SGD"
 combined_metadata[which(combined_metadata$location %in% rec), "location"] <- "REC"
+combined_metadata$polyp = as.numeric(((combined_metadata$Polyp_N) > 0))
 
+#final filter to remove samples that meet exclusion criteria
+
+#antibiotics use == 1
+
+combined_metadata <- combined_metadata[-which(combined_metadata$AntiBio == 1 ),]
+
+#polyps but no adenomas
+combined_metadata <- combined_metadata[-which(combined_metadata$Polyp_N > 0 & combined_metadata$Adenoma == 0),]
+
+
+#now the final filtering of the other files
+rare_adenoma_asv <- rare_adenoma_asv[which(rownames(rare_adenoma_asv) %in% rownames(combined_metadata)),]
+rare_adenoma_asv <- filter(rare_adenoma_asv)
+
+rel_adenoma_asv <- rel_adenoma_asv[which(rownames(rel_adenoma_asv) %in% rownames(combined_metadata)),]
+rel_adenoma_asv <- filter(rel_adenoma_asv)
+
+adenoma_sequence_stats.df <- adenoma_sequence_stats.df[which(rownames(adenoma_sequence_stats.df) %in% rownames(combined_metadata)),]
 
 # EXPORT DATA  ------------------------------------------------------------
 
@@ -501,3 +538,12 @@ combined_metadata[which(combined_metadata$location %in% rec), "location"] <- "RE
 #             row.names = T,
 #             col.names = T,
 #             sep = "\t")
+#
+# write.table(x = adenoma_sequence_stats.df,
+#             file = "/Users/cgaulke/Documents/research/ohsu_polyp_combined/data/prepped_data/filtered_adenoma_sequence_stats.txt",
+#             quote = F,
+#             row.names = T,
+#             col.names = T,
+#             sep = "\t")
+
+
