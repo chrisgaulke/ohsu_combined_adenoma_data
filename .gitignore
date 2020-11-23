@@ -2,3 +2,5 @@
 .Rhistory
 .RData
 .Ruserdata
+.gitignore
+ohsu_combined_adenoma_data.Rproj
