@@ -337,7 +337,7 @@ polyp2_shannon.boxplot <- ggplot(na.omit(polyp2_obj$shannon.df),
                                      fill = polyp)
 )
 
-#pdf("/Users/cgaulke/Documents/research/ohsu_polyp2/analysis/figs/shannon_tissue_polyp.pdf")
+pdf("/Users/cgaulke/Documents/research/ohsu_polyp_combined/analysis/figs/shannon_tissue_polyp.pdf")
 polyp2_shannon.boxplot +
   geom_boxplot()+
   theme(text = element_text(size=18, colour = "black"),
@@ -349,6 +349,6 @@ polyp2_shannon.boxplot +
   )+
   ylab("Shannon")+
   xlab("")+
-  scale_fill_brewer(palette = "Dark2")
-#dev.off()
+  scale_fill_brewer("Former", palette = "Dark2")
+dev.off()
 
