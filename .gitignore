@@ -4,3 +4,4 @@
 .Ruserdata
 .gitignore
 ohsu_combined_adenoma_data.Rproj
+.DS_Store
