@@ -77,13 +77,17 @@ ordinate <- function(obj){
                        center = T
   )
 
+  obj$mds  <- obj_mmds
   obj_mmds <- as.data.frame(obj_mmds$points)
   obj_mmds <- obj_mmds[rownames(obj$meta),]
-  obj$mds <- obj_mmds
+  obj$mds.df <- obj_mmds
 
-  obj_prcomp <- as.data.frame(obj_prcomp$x[,1:5])
-  obj_prcomp <- obj_prcomp[rownames(obj$meta),]
+
   obj$prcomp <- obj_prcomp
+  obj_prcomp    <- as.data.frame(obj_prcomp$x[,1:5])
+  obj_prcomp    <- obj_prcomp[rownames(obj$meta),]
+  obj$prcomp.df <- obj_prcomp
+
 
   return(obj)
 }
@@ -347,18 +351,19 @@ polyp2_shannon.boxplot <- ggplot(na.omit(polyp2_obj$shannon.df),
 polyp2_shannon.boxplot +
   geom_boxplot()+
   geom_point(position = position_dodge(width= .75), color = "black", shape = 21, alpha = .5 )+
-  theme(text = element_text(size=18, colour = "black"),
+  theme(text = element_text(size=24, colour = "black"),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         panel.background = element_blank(),
         axis.line = element_line(colour = "black"),
-        axis.text = element_text(colour = "black")
+        axis.text = element_text(colour = "black"),
+        aspect.ratio = 1.5,
+        legend.position = "top"
   )+
   ylab("Shannon")+
   xlab("")+
-  scale_fill_brewer("Former", palette = "Dark2")+
-  scale_color_brewer("Former", palette = "Dark2")
-
+  scale_fill_brewer("", palette = "Dark2", labels = c("Non-Former", "Former"))+
+  scale_color_brewer("", palette = "Dark2")
 #dev.off()
 
 polyp2_shannon.boxplot <- ggplot(na.omit(polyp2_obj$shannon.df),
@@ -468,17 +473,19 @@ polyp2_richness.plot <- ggplot(na.omit(polyp2_obj$richness),
 polyp2_richness.plot +
   geom_boxplot()+
   geom_point(position = position_dodge(width= .75), color = "black", shape = 21, alpha = .5 )+
-  theme(text = element_text(size=18, colour = "black"),
+  theme(text = element_text(size=24, colour = "black"),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         panel.background = element_blank(),
         axis.line = element_line(colour = "black"),
-        axis.text = element_text(colour = "black")
+        axis.text = element_text(colour = "black"),
+        aspect.ratio = 1.5,
+        legend.position = "top"
   )+
   ylab("Richness")+
   xlab("")+
-  scale_fill_brewer("Former", palette = "Dark2")+
-  scale_color_brewer("Former", palette = "Dark2")
+  scale_fill_brewer("", palette = "Dark2", labels = c("Non-Former", "Former"))+
+  scale_color_brewer("", palette = "Dark2")
 #dev.off()
 
 
