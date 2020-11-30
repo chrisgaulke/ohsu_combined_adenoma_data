@@ -36,6 +36,9 @@ library(randomForest)
 library(qvalue)
 library(gplots)
 library(pROC)
+library(lme4)
+library(lmerTest)
+
 options("stringsAsFactors"=F)
 
 # FUNCTIONS ---------------------------------------------------------------
@@ -312,34 +315,38 @@ tax.obj$genus   <- genus.df
 #aggregate phylotype counts (not really a df, actually an obj)
 polyp2_obj$phylotype <- phylotype_analysis(polyp2_obj,tax = tax.obj)
 
-# ANALYSIS: DIVERSITY --------------------------------------------------
+# ANALYSIS: COMPUTE DIVERSITY ---------------------------------------------
 
 set.seed(731)
 polyp2_obj <- diversity_analysis(polyp2_obj)
 polyp2_obj <- run_beta(polyp2_obj)
 polyp2_obj <- ordinate(polyp2_obj)
 
-# ANALYSIS: SHANNON -----------------------------------------------
+# ANALYSIS: SHANNON ------------------------------------------------------
 
 polyp2_obj$shannon.df <- cbind(polyp2_obj$shannon,
                                polyp2_obj$meta[names(polyp2_obj$shannon),"type"],
                                polyp2_obj$meta[names(polyp2_obj$shannon),"location"],
                                polyp2_obj$meta[names(polyp2_obj$shannon),"polyp"],
-                               polyp2_obj$meta[names(polyp2_obj$shannon),"Polyp_N"])
+                               polyp2_obj$meta[names(polyp2_obj$shannon),"Adenoma"],
+                               polyp2_obj$meta[names(polyp2_obj$shannon),"polyp.tissue"],
+                               polyp2_obj$meta[names(polyp2_obj$shannon),"id"])
 
-colnames(polyp2_obj$shannon.df) <- c("shannon", "tissue", "location", "polyp", "npolyp")
+colnames(polyp2_obj$shannon.df) <- c("shannon", "tissue", "location", "former", "npolyp", "polyptissue","id")
 polyp2_obj$shannon.df <- as.data.frame(polyp2_obj$shannon.df)
 polyp2_obj$shannon.df$shannon <- as.numeric(polyp2_obj$shannon.df$shannon)
+polyp2_obj$shannon.df$npolyp <- as.numeric(polyp2_obj$shannon.df$npolyp)
 
 polyp2_shannon.boxplot <- ggplot(na.omit(polyp2_obj$shannon.df),
                                  aes(x = tissue,
                                      y = shannon,
-                                     fill = polyp)
+                                     fill = former)
 )
 
-pdf("/Users/cgaulke/Documents/research/ohsu_polyp_combined/analysis/figs/shannon_tissue_polyp.pdf")
+#pdf("/Users/cgaulke/Documents/research/ohsu_polyp_combined/analysis/figs/shannon_tissue_polyp.pdf")
 polyp2_shannon.boxplot +
   geom_boxplot()+
+  geom_point(position = position_dodge(width= .75), color = "black", shape = 21, alpha = .5 )+
   theme(text = element_text(size=18, colour = "black"),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
@@ -349,6 +356,218 @@ polyp2_shannon.boxplot +
   )+
   ylab("Shannon")+
   xlab("")+
-  scale_fill_brewer("Former", palette = "Dark2")
-dev.off()
+  scale_fill_brewer("Former", palette = "Dark2")+
+  scale_color_brewer("Former", palette = "Dark2")
+
+#dev.off()
+
+polyp2_shannon.boxplot <- ggplot(na.omit(polyp2_obj$shannon.df),
+                                 aes(x = location,
+                                     y = shannon,
+                                     fill = former)
+)
+
+#pdf("/Users/cgaulke/Documents/research/ohsu_polyp_combined/analysis/figs/shannon_location_boxplot.pdf")
+polyp2_shannon.boxplot +
+  geom_boxplot()+
+  geom_point(position = position_dodge(width= .75), color = "black", shape = 21, alpha = .5 )+
+  theme(text = element_text(size=18, colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.line = element_line(colour = "black"),
+        axis.text = element_text(colour = "black")
+  )+
+  ylab("Shannon")+
+  xlab("")+
+  scale_fill_brewer("Former", palette = "Dark2")+
+  scale_color_brewer("Former", palette = "Dark2")
+#dev.off()
+
+#this is the whole enchilada here. It might just be me but I find this really
+#difficult to determine if this actually does what I want here.
+
+lmefit1 <- lmer(shannon ~ npolyp *
+                  factor(tissue) + (1 + tissue|id) ,
+                na.omit(polyp2_obj$shannon.df))
+summary(lmefit1) #sig
+
+#mucosal former effects
+
+lmefit2 <- lmer(shannon ~
+                  npolyp + (1 |id),
+                na.omit(subset(polyp2_obj$shannon.df,subset = tissue=="Mucosal")))
+summary(lmefit2) # no sig
+
+#fecal npolyp
+lmfit1 <- lm(shannon ~
+               npolyp ,
+             na.omit(subset(polyp2_obj$shannon.df,subset = tissue=="Fecal")))
+summary(lmfit1) #sig
+
+
+#oral npolyp
+#(Note that these models only include main effects bc there aren't multi samples)
+
+lmfit2 <- lm(shannon ~
+                npolyp ,
+             na.omit(subset(polyp2_obj$shannon.df,subset = tissue=="Oral")))
+summary(lmfit2) #no sig
+
+
+adenoma_shannon.point <- ggplot(na.omit(polyp2_obj$shannon.df),
+                                aes(x = npolyp,
+                                    y = shannon,
+                                    color = tissue)
+                                )
+#pdf("/Users/cgaulke/Documents/research/ohsu_polyp_combined/analysis/figs/shannon_regression.pdf",
+#    width = 14, height = 7)
+
+adenoma_shannon.point +
+  geom_point(size = 3, alpha = .7 ) +
+  geom_smooth(method = "glm", aes(fill = tissue), alpha = .1)+
+  theme(text = element_text(size=18, colour = "black"),
+        panel.grid.major = element_line(color = "grey97"),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.line = element_line(colour = "black"),
+        axis.text = element_text(colour = "black"),
+        strip.background = element_blank(),
+        strip.text = element_blank(),
+        aspect.ratio = 1
+  )+
+  ylab("Shannon")+
+  xlab("Adenomas")+
+  facet_wrap(.~tissue)+
+  scale_color_brewer("Tissue",palette = "Dark2")+
+  scale_fill_brewer("Tissue",palette = "Dark2")
+
+#dev.off()
+
+
+# ANALYSIS: RICHNESS  -----------------------------------------------------
+
+#Richness
+polyp2_obj$richness <- as.data.frame(specnumber(polyp2_obj$data))
+colnames(polyp2_obj$richness)[1] <- "richness"
+polyp2_obj$richness$tissue <- polyp2_obj$meta$type
+polyp2_obj$richness$location <- polyp2_obj$meta$location
+polyp2_obj$richness$former <- factor(polyp2_obj$meta$polyp)
+polyp2_obj$richness$npolyp <- polyp2_obj$meta$Adenoma
+polyp2_obj$richness$polyptissue <- polyp2_obj$meta$polyp.tissue
+polyp2_obj$richness$id <- polyp2_obj$meta$id
+
+polyp2_richness.plot <- ggplot(na.omit(polyp2_obj$richness),
+                               aes(x = tissue,
+                                   y = richness,
+                                   fill = former
+                               )
+)
+
+#pdf("/Users/cgaulke/Documents/research/ohsu_polyp_combined/analysis/figs/richness_tissue_polyp.pdf")
+polyp2_richness.plot +
+  geom_boxplot()+
+  geom_point(position = position_dodge(width= .75), color = "black", shape = 21, alpha = .5 )+
+  theme(text = element_text(size=18, colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.line = element_line(colour = "black"),
+        axis.text = element_text(colour = "black")
+  )+
+  ylab("Richness")+
+  xlab("")+
+  scale_fill_brewer("Former", palette = "Dark2")+
+  scale_color_brewer("Former", palette = "Dark2")
+#dev.off()
+
+
+polyp2_richness.boxplot <- ggplot(na.omit(polyp2_obj$richness),
+                                 aes(x = location,
+                                     y = richness,
+                                     fill = former)
+)
+
+#pdf("/Users/cgaulke/Documents/research/ohsu_polyp_combined/analysis/figs/richness_location_boxplot.pdf")
+polyp2_richness.boxplot +
+  geom_boxplot()+
+  geom_point(position = position_dodge(width= .75), color = "black", shape = 21, alpha = .5 )+
+  theme(text = element_text(size=18, colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.line = element_line(colour = "black"),
+        axis.text = element_text(colour = "black")
+  )+
+  ylab("Richness")+
+  xlab("")+
+  scale_fill_brewer("Former", palette = "Dark2")+
+  scale_color_brewer("Former", palette = "Dark2")
+#dev.off()
+
+
+adenoma_richness.point <- ggplot(na.omit(polyp2_obj$richness),
+                                aes(x = npolyp,
+                                    y = richness,
+                                    color = tissue)
+)
+
+# So I think that what we can say here is that the there are tissue level differences
+# in richness (no surprise here). The relationship with number of polyps is
+# interesting but I am not sure exactly how to interpret the tissue level
+# interaction terms.
+
+lmerich_fit1 <- lmer(richness ~ npolyp * factor(tissue) +
+                (1 +tissue|id) ,na.omit(polyp2_obj$richness))
+anova(lmerich_fit1)
+summary(lmerich_fit1)#sig
+
+#mucosal former effects
+lmerich_fit2 <- lmer(richness ~
+                       npolyp + (1|id),
+                     na.omit(subset(polyp2_obj$richness,subset = tissue=="Mucosal")))
+summary(lmerich_fit2)#no sig
+
+#fecal former
+#(Note that these models only include main effects bc there aren't multi samples)
+lmrich_fit1 <- lm(richness ~
+                    npolyp ,
+                  na.omit(subset(polyp2_obj$richness,subset = tissue=="Fecal")))
+summary(lmrich_fit1)#sig
+
+#oral former
+#(Note that these models only include main effects bc there aren't multi samples)
+
+lmrich_fit2 <- lm(richness ~
+                    npolyp ,
+                  na.omit(subset(polyp2_obj$richness,subset = tissue=="Oral")))
+summary(lmrich_fit2) #no sig
+
+# These results mirror those from the original (separate) analyses which indicate
+# that only fecal alpha diversity associates with number of polyps
+
+
+#pdf("/Users/cgaulke/Documents/research/ohsu_polyp_combined/analysis/figs/richness_regression.pdf",
+#    width = 14, height = 7)
+
+adenoma_richness.point +
+  geom_point(size = 3, alpha = .7 ) +
+  geom_smooth(method = "glm", aes(fill = tissue), alpha = .1)+
+  theme(text = element_text(size=18, colour = "black"),
+        panel.grid.major = element_line(color = "grey97"),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.line = element_line(colour = "black"),
+        axis.text = element_text(colour = "black"),
+        strip.background = element_blank(),
+        strip.text = element_blank(),
+        aspect.ratio = 1
+  )+
+  ylab("Richness")+
+  xlab("Adenomas")+
+  facet_wrap(.~tissue)+
+  scale_color_brewer("Tissue",palette = "Dark2")+
+  scale_fill_brewer("Tissue",palette = "Dark2")
+
+#dev.off()
 
