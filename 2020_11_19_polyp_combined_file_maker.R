@@ -513,41 +513,39 @@ adenoma_sequence_stats.df <- adenoma_sequence_stats.df[which(rownames(adenoma_se
 # The code below is run only once to prevent inadvertent modifying these files
 # later on.
 #
-
-write.table(x = rare_adenoma_asv,
-            file = "data/prepped_data/rarefied_10000_adenoma_asv.txt",
-            quote = F,
-            row.names = T,
-            col.names = T,
-            sep = "\t")
-
-
-write.table(x = rel_adenoma_asv,
-            file = "data/prepped_data/rel_abd_adenoma_asv.txt",
-            quote = F,
-            row.names = T,
-            col.names = T,
-            sep = "\t")
-
-write.table(x = combined_metadata,
-           file = "data/prepped_data/filtered_combined_metadata.txt",
-           quote = F,
-           row.names = T,
-           col.names = T,
-           sep = "\t")
-
-write.table(x = adenoma_tax.df,
-            file = "data/prepped_data/filtered_adenoma_tax.txt",
-            quote = F,
-            row.names = T,
-            col.names = T,
-            sep = "\t")
-
-write.table(x = adenoma_sequence_stats.df,
-            file = "data/prepped_data/filtered_adenoma_sequence_stats.txt",
-            quote = F,
-            row.names = T,
-            col.names = T,
-            sep = "\t")
-
-
+#
+# write.table(x = rare_adenoma_asv,
+#             file = "data/prepped_data/rarefied_10000_adenoma_asv.txt",
+#             quote = F,
+#             row.names = T,
+#             col.names = T,
+#             sep = "\t")
+#
+#
+# write.table(x = rel_adenoma_asv,
+#             file = "data/prepped_data/rel_abd_adenoma_asv.txt",
+#             quote = F,
+#             row.names = T,
+#             col.names = T,
+#             sep = "\t")
+#
+# write.table(x = combined_metadata,
+#            file = "data/prepped_data/filtered_combined_metadata.txt",
+#            quote = F,
+#            row.names = T,
+#            col.names = T,
+#            sep = "\t")
+#
+# write.table(x = adenoma_tax.df,
+#             file = "data/prepped_data/filtered_adenoma_tax.txt",
+#             quote = F,
+#             row.names = T,
+#             col.names = T,
+#             sep = "\t")
+#
+# write.table(x = adenoma_sequence_stats.df,
+#             file = "data/prepped_data/filtered_adenoma_sequence_stats.txt",
+#             quote = F,
+#             row.names = T,
+#             col.names = T,
+#             sep = "\t")
