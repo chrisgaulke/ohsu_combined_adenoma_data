@@ -404,6 +404,10 @@ abline(v = 10000, col = "green")
 
 filter.names <- names(rowSums(adenoma_asv.df)[rowSums(adenoma_asv.df) < 10000])
 
+# I am removing patient # 56 because we don't have metadata for this individual
+filter.names <- c(filter.names,"lane1-s208-index-CCTAACGGTCCA-056-RC",
+                  "lane1-s183-index-CGAATACTGACA-S-056" )
+
 adenoma_asv.df <- adenoma_asv.df[-which(rownames(adenoma_asv.df) %in% filter.names), ]
 
 # now sync asv table with metadata
@@ -417,19 +421,19 @@ adenoma_asv.filt <- filter(adenoma_asv.df)
 
 nspec <- specnumber(adenoma_asv.df)
 
-pdf("/Users/cgaulke/Documents/research/ohsu_polyp_combined/analysis/figs/combined_nspecies_hist.pdf")
+pdf("figs/combined_nspecies_hist.pdf")
 hist(nspec)
 dev.off()
 # get read depth
 
 nrsums <- rowSums(adenoma_asv.df)
 
-pdf("/Users/cgaulke/Documents/research/ohsu_polyp_combined/analysis/figs/read_depth_hist.pdf")
+pdf("figs/read_depth_hist.pdf")
 hist(nrsums)
 dev.off()
 
 #now we can plot the curves
-pdf("/Users/cgaulke/Documents/research/ohsu_polyp_combined/analysis/figs/rarecurves.pdf")
+pdf("figs/rarecurves.pdf")
 rarecurve(adenoma_asv.df, step = 1000,
           sample = 0,
           label = F,
