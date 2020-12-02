@@ -196,18 +196,18 @@ polyp2_sequence_stats.df <- read.table("/Users/cgaulke/Documents/research/ohsu_p
 #just some quick summary stats
 
 sum(polyp2_sequence_stats.df$reads.in)
-#[1] 45160707
+#[1] 37183608
 mean(polyp2_sequence_stats.df$reads.in)
-#[1] 69692.45
+#[1] 70290.37
 median(polyp2_sequence_stats.df$reads.in)
-#[1] 68883
+#[1] 68913
 
 sum(polyp2_sequence_stats.df$reads.out)
-#[1] 33206620
+#[1] 27523989
 mean(polyp2_sequence_stats.df$reads.out)
-#[1] 51244.78
+#[1] 52030.22
 median(polyp2_sequence_stats.df$reads.out)
-#[1] 50533.5
+#[1] 50882
 
 # ANALYSIS: FILTERED READ COUNT SUMMARY STATS ---------------------------------
 
@@ -226,7 +226,7 @@ reads_by_type.hist <- ggplot(data = mfiltered_polyp2_sequence_stats.df[
            fill = type)
           )
 
-pdf("/Users/cgaulke/Documents/research/ohsu_polyp_combined/analysis/figs/qcreads_by_tissue.pdf")
+pdf("figs/qcreads_by_tissue.pdf")
 reads_by_type.hist +
   geom_histogram(alpha = .5, position = "identity", color = "black")+
   theme(text = element_text(size=18, colour = "black"),
@@ -276,8 +276,6 @@ polyp2_obj <- NULL
 polyp2_obj$data <- polyp2_asv.df
 polyp2_obj$meta <- polyp2_metadata.df
 polyp2_obj$rel_abd <- polyp2_asv_rel.df
-
-polyp2_obj$data <- polyp2_obj$data[rownames(polyp2_obj$meta),]
 
 # DATA: AGGREGATE PHYLOTYPES -----------------------------------------------------
 
@@ -347,7 +345,7 @@ polyp2_shannon.boxplot <- ggplot(na.omit(polyp2_obj$shannon.df),
                                      fill = former)
 )
 
-#pdf("/Users/cgaulke/Documents/research/ohsu_polyp_combined/analysis/figs/shannon_tissue_polyp.pdf")
+pdf("figs/shannon_tissue_polyp.pdf")
 polyp2_shannon.boxplot +
   geom_boxplot()+
   geom_point(position = position_dodge(width= .75), color = "black", shape = 21, alpha = .5 )+
@@ -364,7 +362,7 @@ polyp2_shannon.boxplot +
   xlab("")+
   scale_fill_brewer("", palette = "Dark2", labels = c("Non-Former", "Former"))+
   scale_color_brewer("", palette = "Dark2")
-#dev.off()
+dev.off()
 
 polyp2_shannon.boxplot <- ggplot(na.omit(polyp2_obj$shannon.df),
                                  aes(x = location,
@@ -372,7 +370,7 @@ polyp2_shannon.boxplot <- ggplot(na.omit(polyp2_obj$shannon.df),
                                      fill = former)
 )
 
-#pdf("/Users/cgaulke/Documents/research/ohsu_polyp_combined/analysis/figs/shannon_location_boxplot.pdf")
+pdf("figs/shannon_location_boxplot.pdf")
 polyp2_shannon.boxplot +
   geom_boxplot()+
   geom_point(position = position_dodge(width= .75), color = "black", shape = 21, alpha = .5 )+
@@ -387,7 +385,7 @@ polyp2_shannon.boxplot +
   xlab("")+
   scale_fill_brewer("Former", palette = "Dark2")+
   scale_color_brewer("Former", palette = "Dark2")
-#dev.off()
+dev.off()
 
 #this is the whole enchilada here. It might just be me but I find this really
 #difficult to determine if this actually does what I want here.
@@ -395,6 +393,7 @@ polyp2_shannon.boxplot +
 lmefit1 <- lmer(shannon ~ npolyp *
                   factor(tissue) + (1 + tissue|id) ,
                 na.omit(polyp2_obj$shannon.df))
+anova(lmefit1)
 summary(lmefit1) #sig
 
 #mucosal former effects
@@ -403,6 +402,15 @@ lmefit2 <- lmer(shannon ~
                   npolyp + (1 |id),
                 na.omit(subset(polyp2_obj$shannon.df,subset = tissue=="Mucosal")))
 summary(lmefit2) # no sig
+
+#mucosal adenomas with location effects
+
+lmefit3 <- lmer(shannon ~
+                  npolyp + location + (1 |id),
+                na.omit(subset(polyp2_obj$shannon.df,subset = tissue=="Mucosal")))
+anova(lmefit3)
+summary(lmefit3) # no sig
+
 
 #fecal npolyp
 lmfit1 <- lm(shannon ~
@@ -425,8 +433,8 @@ adenoma_shannon.point <- ggplot(na.omit(polyp2_obj$shannon.df),
                                     y = shannon,
                                     color = tissue)
                                 )
-#pdf("/Users/cgaulke/Documents/research/ohsu_polyp_combined/analysis/figs/shannon_regression.pdf",
-#    width = 14, height = 7)
+pdf("figs/shannon_regression.pdf",
+   width = 14, height = 7)
 
 adenoma_shannon.point +
   geom_point(size = 3, alpha = .7 ) +
@@ -447,7 +455,7 @@ adenoma_shannon.point +
   scale_color_brewer("Tissue",palette = "Dark2")+
   scale_fill_brewer("Tissue",palette = "Dark2")
 
-#dev.off()
+dev.off()
 
 
 # ANALYSIS: RICHNESS  -----------------------------------------------------
@@ -469,7 +477,7 @@ polyp2_richness.plot <- ggplot(na.omit(polyp2_obj$richness),
                                )
 )
 
-#pdf("/Users/cgaulke/Documents/research/ohsu_polyp_combined/analysis/figs/richness_tissue_polyp.pdf")
+pdf("figs/richness_tissue_polyp.pdf")
 polyp2_richness.plot +
   geom_boxplot()+
   geom_point(position = position_dodge(width= .75), color = "black", shape = 21, alpha = .5 )+
@@ -486,7 +494,7 @@ polyp2_richness.plot +
   xlab("")+
   scale_fill_brewer("", palette = "Dark2", labels = c("Non-Former", "Former"))+
   scale_color_brewer("", palette = "Dark2")
-#dev.off()
+dev.off()
 
 
 polyp2_richness.boxplot <- ggplot(na.omit(polyp2_obj$richness),
@@ -495,7 +503,7 @@ polyp2_richness.boxplot <- ggplot(na.omit(polyp2_obj$richness),
                                      fill = former)
 )
 
-#pdf("/Users/cgaulke/Documents/research/ohsu_polyp_combined/analysis/figs/richness_location_boxplot.pdf")
+pdf("figs/richness_location_boxplot.pdf")
 polyp2_richness.boxplot +
   geom_boxplot()+
   geom_point(position = position_dodge(width= .75), color = "black", shape = 21, alpha = .5 )+
@@ -510,7 +518,7 @@ polyp2_richness.boxplot +
   xlab("")+
   scale_fill_brewer("Former", palette = "Dark2")+
   scale_color_brewer("Former", palette = "Dark2")
-#dev.off()
+dev.off()
 
 
 adenoma_richness.point <- ggplot(na.omit(polyp2_obj$richness),
@@ -550,12 +558,20 @@ lmrich_fit2 <- lm(richness ~
                   na.omit(subset(polyp2_obj$richness,subset = tissue=="Oral")))
 summary(lmrich_fit2) #no sig
 
+
+#mucosal adenomas with location effects
+
+lmerichfit3 <- lmer(richness ~
+                  npolyp + location + (1 |id),
+                na.omit(subset(polyp2_obj$richness,subset = tissue=="Mucosal")))
+anova(lmerichfit3)
+summary(lmerichfit3) # marginal sig
+
 # These results mirror those from the original (separate) analyses which indicate
 # that only fecal alpha diversity associates with number of polyps
 
 
-#pdf("/Users/cgaulke/Documents/research/ohsu_polyp_combined/analysis/figs/richness_regression.pdf",
-#    width = 14, height = 7)
+pdf("figs/richness_regression.pdf", width = 14, height = 7)
 
 adenoma_richness.point +
   geom_point(size = 3, alpha = .7 ) +
@@ -576,5 +592,238 @@ adenoma_richness.point +
   scale_color_brewer("Tissue",palette = "Dark2")+
   scale_fill_brewer("Tissue",palette = "Dark2")
 
-#dev.off()
+dev.off()
+
+
+# ANALYSIS: BETA DIVERSITY NMDS ---------------------------------------------
+
+#Start with a simple all tissue ordination
+
+#add metadata
+polyp2_obj$mds.df$tissue       <- polyp2_obj$meta$type
+polyp2_obj$mds.df$former       <- polyp2_obj$meta$polyp
+polyp2_obj$mds.df$npolyp       <- polyp2_obj$meta$Adenoma
+polyp2_obj$mds.df$polyp.tissue <- polyp2_obj$meta$polyp.tissue
+polyp2_obj$mds.df$location     <- polyp2_obj$meta$location
+polyp2_obj$mds.df$nbin         <- cut(polyp2_obj$mds.df$npolyp, # for plotting
+                                      breaks = c(-1, 0.1,2.1,5,10, 20 ),
+                                      labels = c("0","1-2", "3-5","6-10","10+"))
+
+tissue_mds.ord <- ggplot(na.omit(polyp2_obj$mds.df),
+                            aes(x = MDS1,
+                                y = MDS2,
+                                color = tissue)
+)
+
+pdf("figs/tissue_nmds.pdf")
+tissue_mds.ord +
+  geom_point( size = 3, alpha = .4 )+
+  theme(text = element_text(size=18, colour = "black"),
+        panel.grid.major = element_line(color = "grey97"),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        panel.border     = element_rect(fill = NA),
+        axis.line = element_line(colour = "black"),
+        axis.text = element_text(colour = "black"),
+        strip.background = element_blank(),
+        strip.text = element_blank(),
+        aspect.ratio = 1,
+        legend.position = "top"
+  ) +
+  scale_color_brewer("",palette = "Dark2")
+dev.off()
+
+
+mucosal_mds.ord <- ggplot(na.omit(subset(polyp2_obj$mds.df,subset = tissue == "Mucosal")),
+                         aes(x = MDS1,
+                             y = MDS2,
+                             color = nbin
+                             )
+)
+
+pdf("figs/mucosal_nmds.pdf")
+mucosal_mds.ord +
+  geom_point(aes(alpha = as.character(nbin)),
+             size =3 ) +
+  theme(text = element_text(size=18, colour = "black"),
+        panel.grid.major = element_line(color = "grey97"),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        panel.border     = element_rect(fill = NA),
+        axis.line = element_line(colour = "black"),
+        axis.text = element_text(colour = "black"),
+        strip.background = element_blank(),
+        strip.text = element_blank(),
+        aspect.ratio = 1
+  )+
+  scale_alpha_manual("", breaks = c("0", "1-2", "3-5" , "6-10", "10+"),
+                     values =  c(0.1, 0.7, 0.7, 0.7, .7))+
+  scale_color_brewer("Adenomas", palette = "Set1")+
+  guides(alpha = FALSE)
+dev.off()
+
+#fecal
+
+fecal_mds.ord <- ggplot(na.omit(subset(polyp2_obj$mds.df,subset = tissue == "Fecal")),
+                          aes(x = MDS1,
+                              y = MDS2,
+                              color = nbin
+                          )
+)
+
+pdf("figs/fecal_nmds.pdf")
+fecal_mds.ord +
+  geom_point(aes(alpha = as.character(nbin)),
+             size =3 ) +
+  theme(text = element_text(size=18, colour = "black"),
+        panel.grid.major = element_line(color = "grey97"),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        panel.border     = element_rect(fill = NA),
+        axis.line = element_line(colour = "black"),
+        axis.text = element_text(colour = "black"),
+        strip.background = element_blank(),
+        strip.text = element_blank(),
+        aspect.ratio = 1
+  )+
+  scale_alpha_manual("", breaks = c("0", "1-2", "3-5" , "6-10", "10+"),
+                     values =  c(0.1, 0.7, 0.7, 0.7, .7))+
+  scale_color_brewer("Adenomas", palette = "Set1")+
+  guides(alpha = FALSE)
+dev.off()
+
+
+
+#oral
+
+oral_mds.ord <- ggplot(na.omit(subset(polyp2_obj$mds.df,subset = tissue == "Oral")),
+                        aes(x = MDS1,
+                            y = MDS2,
+                            color = nbin
+                        )
+)
+
+pdf("figs/oral_nmds.pdf")
+oral_mds.ord +
+  geom_point(aes(alpha = as.character(nbin)),
+             size =3 ) +
+  theme(text = element_text(size=18, colour = "black"),
+        panel.grid.major = element_line(color = "grey97"),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        panel.border     = element_rect(fill = NA),
+        axis.line = element_line(colour = "black"),
+        axis.text = element_text(colour = "black"),
+        strip.background = element_blank(),
+        strip.text = element_blank(),
+        aspect.ratio = 1
+  )+
+  scale_alpha_manual("", breaks = c("0", "1-2", "3-5" , "6-10", "10+"),
+                     values =  c(0.1, 0.7, 0.7, 0.7, .7))+
+  scale_color_brewer("Adenomas", palette = "Set1")+
+  guides(alpha = FALSE)
+dev.off()
+
+
+# ANALYSIS: BETA DIVERSITY ADONIS (ASV) -------------------------------------
+
+#start with one big model that includes all the data
+set.seed(731)
+tissue_npolyp.adonis <- adonis(polyp2_obj$data ~  polyp2_obj$meta$Adenoma * polyp2_obj$meta$type,
+                                                    permutations = 5000,
+                                                    method = "bray")
+tissue_npolyp.adonis
+
+#this model indicates that there are significant impacts of tissue and number of
+#adenomas on the microbiome as well as an interaction between these two effects
+
+
+#lets look at mucosa separately
+set.seed(731)
+mucosal_npolyp.adonis <-
+  adonis(
+    polyp2_obj$data[rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Mucosal"), ]),] ~
+      polyp2_obj$meta[which(polyp2_obj$meta$type == "Mucosal"), "Adenoma"] +
+      polyp2_obj$meta[which(polyp2_obj$meta$type == "Mucosal"), "location"],
+    permutations = 5000,
+    method = "bray"
+  )
+
+mucosal_npolyp.adonis
+
+#significant effect of adenoma # but not colon location.
+
+
+#now fecal
+set.seed(731)
+
+fecal_npolyp.adonis <-
+  adonis(polyp2_obj$data[rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Fecal"), ]),] ~
+           polyp2_obj$meta[which(polyp2_obj$meta$type == "Fecal"), "Adenoma"] ,
+         permutations = 5000,
+         method = "bray")
+
+fecal_npolyp.adonis #not significant
+
+#now oral
+set.seed(731)
+
+oral_npolyp.adonis <-
+  adonis(polyp2_obj$data[rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Oral"), ]),] ~
+           polyp2_obj$meta[which(polyp2_obj$meta$type == "Oral"), "Adenoma"] ,
+         permutations = 5000,
+         method = "bray")
+
+oral_npolyp.adonis #not significant
+
+# ANALYSIS: BETA DIVERSITY ADONIS (Genus) -------------------------------------
+
+#start with one big model that includes all the data
+set.seed(731)
+gtissue_npolyp.adonis <- adonis(polyp2_obj$phylotype$genus ~  polyp2_obj$meta$Adenoma * polyp2_obj$meta$type,
+                               permutations = 5000,
+                               method = "bray")
+gtissue_npolyp.adonis
+
+#this model indicates that there are significant impacts of tissue and number of
+#adenomas on the microbiome as well as an interaction between these two effects
+
+
+#lets look at mucosa separately
+set.seed(731)
+gmucosal_npolyp.adonis <-
+  adonis(
+    polyp2_obj$phylotype$genus[rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Mucosal"), ]),] ~
+      polyp2_obj$meta[which(polyp2_obj$meta$type == "Mucosal"), "Adenoma"] +
+      polyp2_obj$meta[which(polyp2_obj$meta$type == "Mucosal"), "location"],
+    permutations = 5000,
+    method = "bray"
+  )
+
+gmucosal_npolyp.adonis
+
+#significant effect of adenoma # but not colon location.
+
+
+#now fecal
+set.seed(731)
+
+gfecal_npolyp.adonis <-
+  adonis(polyp2_obj$phylotype$genus[rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Fecal"), ]),] ~
+           polyp2_obj$meta[which(polyp2_obj$meta$type == "Fecal"), "Adenoma"] ,
+         permutations = 5000,
+         method = "bray")
+
+gfecal_npolyp.adonis #not significant
+
+#now oral
+set.seed(731)
+
+goral_npolyp.adonis <-
+  adonis(polyp2_obj$phylotype$genus[rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Oral"), ]),] ~
+           polyp2_obj$meta[which(polyp2_obj$meta$type == "Oral"), "Adenoma"] ,
+         permutations = 5000,
+         method = "bray")
+
+goral_npolyp.adonis #not significant
 
