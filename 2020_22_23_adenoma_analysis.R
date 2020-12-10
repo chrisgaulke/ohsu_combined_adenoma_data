@@ -36,8 +36,10 @@ library(randomForest)
 library(qvalue)
 library(gplots)
 library(pROC)
-library(lme4)
-library(lmerTest)
+#library(lme4)
+#library(lmerTest)
+library(MASS)
+library(glmmTMB)
 
 options("stringsAsFactors"=F)
 
@@ -826,4 +828,528 @@ goral_npolyp.adonis <-
          method = "bray")
 
 goral_npolyp.adonis #not significant
+
+
+#so only the mucosal adonis and the big model are significant
+
+# ANALYSIS: TAXA MODELS SETUP ------------------------------------------
+
+# For this analysis the data needs to be split and filtered to ensure quality
+# results.
+
+# Sorry for the mess here... Start by subsetting based on type of tissue
+# and filtering to get taxa that are present in at least 20% of samples.
+# This threshold  was chosen because ~22% of mucosal tissue samples are from
+# adenomas.By selecting a threshold that is slightly lower than this we ensure
+# that taxa that are only present on adenoma tissue will not be filtered. For
+# consistency we will apply this same threshold to other tissues.
+
+#Fecal ASV
+fecal_adenoma_asv.df <-
+  polyp2_obj$data[which(rownames(polyp2_obj$data) %in%
+       rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Fecal"),]
+        )
+  ),
+  ]
+
+#Filter
+fecal_adenoma_asv.df <-
+  fecal_adenoma_asv.df[,apply(fecal_adenoma_asv.df, 2,
+                function(x){sum(as.logical(x)) >
+                    round(nrow(fecal_adenoma_asv.df) * .2)})
+  ]
+
+#Fecal Genus
+fecal_adenoma_genus.df <-
+  polyp2_obj$phylotype$genus[which(rownames(polyp2_obj$phylotype$genus) %in%
+           rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Fecal"),]
+                                              )
+                                   ),
+                             ]
+
+#Filter
+fecal_adenoma_genus.df <-
+  fecal_adenoma_genus.df[, apply(fecal_adenoma_genus.df,
+                                 2,
+                                 function(x) {
+                                   sum(as.logical(x)) >
+                                     round(nrow(fecal_adenoma_genus.df) * .2)
+                                 })]
+
+
+
+#Mucosal ASV
+mucosal_adenoma_asv.df <-
+  polyp2_obj$data[which(rownames(polyp2_obj$data) %in%
+        rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Mucosal"),]
+                )
+  ),
+  ]
+
+#Filter
+mucosal_adenoma_asv.df <-
+  mucosal_adenoma_asv.df[,apply(mucosal_adenoma_asv.df, 2,
+                      function(x){sum(as.logical(x)) >
+                          round(nrow(mucosal_adenoma_asv.df) * .2)})
+  ]
+
+#MucosalGenus
+mucosal_adenoma_genus.df <-
+  polyp2_obj$phylotype$genus[which(rownames(polyp2_obj$phylotype$genus) %in%
+      rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Mucosal"),]
+               )
+  ),
+  ]
+
+#Filter
+mucosal_adenoma_genus.df <-
+  mucosal_adenoma_genus.df[,apply(mucosal_adenoma_genus.df, 2,
+              function(x){sum(as.logical(x)) >
+                  round(nrow(mucosal_adenoma_genus.df) * .2)})
+  ]
+
+
+#Oral ASV
+oral_adenoma_asv.df <-
+  polyp2_obj$data[which(rownames(polyp2_obj$data) %in%
+        rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Oral"), ])),]
+
+#Filter
+oral_adenoma_asv.df <-
+  oral_adenoma_asv.df[, apply(oral_adenoma_asv.df, 2,
+                              function(x) {
+                                sum(as.logical(x)) >
+                        round(nrow(oral_adenoma_asv.df) * .2)
+                              })]
+
+#Oral Genus
+oral_adenoma_genus.df <-
+  polyp2_obj$phylotype$genus[which(rownames(polyp2_obj$phylotype$genus) %in%
+              rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Oral"),]
+                      )
+  ),
+  ]
+
+#Filter
+
+oral_adenoma_genus.df <-
+  oral_adenoma_genus.df[,apply(oral_adenoma_genus.df, 2,
+                      function(x){
+                        sum(as.logical(x)) >
+                          round(nrow(oral_adenoma_genus.df) * .2)})
+]
+
+#make master objects
+asv.models.obj   <- NULL
+genus.models.obj <- NULL
+
+# ANALYSIS: TAXA MODELS MUCOSAL GENUS -------------------------------------
+
+#nadenoma models
+set.seed(731)
+mucosal_adenoma_models <- NULL
+
+for(i in 1:ncol(mucosal_adenoma_genus.df)){
+  fit1 <- NULL
+  tryCatch({fit1 <-
+    glmmTMB(mucosal_adenoma_genus.df[, i] ~ Adenoma + (1 |id),
+             data = subset(polyp2_obj$meta, type == "Mucosal"), family=nbinom1);
+  mucosal_adenoma_models[[colnames(mucosal_adenoma_genus.df)[i]]] <- fit1}, error=function(e) e
+
+  )
+}
+
+#assign to proper slot so we can recycle the object
+genus.models.obj$nadenoma <- mucosal_adenoma_models
+
+#former models
+set.seed(731)
+mucosal_adenoma_models <- NULL
+
+for(i in 1:ncol(mucosal_adenoma_genus.df)){
+  fit1 <- NULL
+  tryCatch({fit1 <-
+    glmmTMB(mucosal_adenoma_genus.df[, i] ~ factor(polyp) + (1 |id),
+            data = subset(polyp2_obj$meta, type == "Mucosal"), family=nbinom1)
+    ;
+  mucosal_adenoma_models[[colnames(mucosal_adenoma_genus.df)[i]]] <- fit1}, error=function(e) e
+
+  )
+}
+
+#assign to proper slot so we can recycle the object
+genus.models.obj$former <- mucosal_adenoma_models
+
+#polyp.tissue models
+set.seed(731)
+mucosal_adenoma_models <- NULL
+
+for(i in 1:ncol(mucosal_adenoma_genus.df)){
+  fit1 <- NULL
+  tryCatch({fit1 <-
+    glmmTMB(mucosal_adenoma_genus.df[, i] ~ factor(polyp.tissue) + (1 |id),
+            data = subset(polyp2_obj$meta, type == "Mucosal"), family=nbinom1)
+  ;
+  mucosal_adenoma_models[[colnames(mucosal_adenoma_genus.df)[i]]] <- fit1}, error=function(e) e
+
+  )
+}
+
+#assign to proper slot so we can recycle the object
+genus.models.obj$polyp.tissue <- mucosal_adenoma_models
+
+#location models
+set.seed(731)
+mucosal_adenoma_models <- NULL
+
+for(i in 1:ncol(mucosal_adenoma_genus.df)){
+  fit1 <- NULL
+  tryCatch({fit1 <-
+    glmmTMB(mucosal_adenoma_genus.df[, i] ~ factor(location) + (1 |id),
+            data = subset(polyp2_obj$meta, type == "Mucosal"), family=nbinom1)
+  ;
+  mucosal_adenoma_models[[colnames(mucosal_adenoma_genus.df)[i]]] <- fit1}, error=function(e) e
+
+  )
+}
+
+#assign to proper slot so we can recycle the object
+genus.models.obj$location <- mucosal_adenoma_models
+
+#basic stats on fdr control genus
+sum(na.omit(qvalue::qvalue(sapply(genus.models.obj$nadenoma,
+                                  FUN = function(x){ coefficients(summary(x))$cond[2,4]}))$qvalue < .1 ))
+sum(na.omit(qvalue::qvalue(sapply(genus.models.obj$former,
+                                  FUN = function(x){ coefficients(summary(x))$cond[2,4]}))$qvalue < .1 ))
+sum(na.omit(qvalue::qvalue(sapply(genus.models.obj$polyp.tissue,
+                                  FUN = function(x){ coefficients(summary(x))$cond[2,4]}))$qvalue < .1 ))
+sum(na.omit(qvalue::qvalue(sapply(genus.models.obj$location,
+                                  FUN = function(x){ coefficients(summary(x))$cond[2,4]}))$qvalue < .1 ))
+
+
+# ANALYSIS: TAXA MODELS MUCOSAL ASV ---------------------------------------
+
+#nadenoma models
+set.seed(731)
+mucosal_adenoma_models <- NULL
+
+for(i in 1:ncol(mucosal_adenoma_asv.df)){
+  fit1 <- NULL
+  tryCatch({fit1 <-
+    glmmTMB(mucosal_adenoma_asv.df[, i] ~ Adenoma + (1 |id),
+            data = subset(polyp2_obj$meta, type == "Mucosal"), family=nbinom1);
+  mucosal_adenoma_models[[colnames(mucosal_adenoma_asv.df)[i]]] <- fit1},
+    error=function(e) e
+
+  )
+}
+
+asv.models.obj$nadenoma <- mucosal_adenoma_models
+
+#former models
+set.seed(731)
+mucosal_adenoma_models <- NULL
+
+for(i in 1:ncol(mucosal_adenoma_asv.df)){
+  fit1 <- NULL
+  tryCatch({fit1 <-
+    glmmTMB(mucosal_adenoma_asv.df[, i] ~ factor(polyp) + (1 |id),
+            data = subset(polyp2_obj$meta, type == "Mucosal"), family=nbinom1);
+  mucosal_adenoma_models[[colnames(mucosal_adenoma_asv.df)[i]]] <- fit1},
+  error=function(e) e
+
+  )
+}
+
+asv.models.obj$former <- mucosal_adenoma_models
+
+#polyp.tissue models
+set.seed(731)
+mucosal_adenoma_models <- NULL
+
+for(i in 1:ncol(mucosal_adenoma_asv.df)){
+  fit1 <- NULL
+  tryCatch({fit1 <-
+    glmmTMB(mucosal_adenoma_asv.df[, i] ~ factor(polyp.tissue) + (1 |id),
+            data = subset(polyp2_obj$meta, type == "Mucosal"), family=nbinom1);
+  mucosal_adenoma_models[[colnames(mucosal_adenoma_asv.df)[i]]] <- fit1},
+  error=function(e) e
+
+  )
+}
+
+asv.models.obj$polyp.tissue <- mucosal_adenoma_models
+
+#location models
+set.seed(731)
+mucosal_adenoma_models <- NULL
+
+for(i in 1:ncol(mucosal_adenoma_asv.df)){
+  fit1 <- NULL
+  tryCatch({fit1 <-
+    glmmTMB(mucosal_adenoma_asv.df[, i] ~ factor(location) + (1 |id),
+            data = subset(polyp2_obj$meta, type == "Mucosal"), family=nbinom1);
+  mucosal_adenoma_models[[colnames(mucosal_adenoma_asv.df)[i]]] <- fit1},
+  error=function(e) e
+
+  )
+}
+
+asv.models.obj$location <- mucosal_adenoma_models
+
+#basic stats on fdr control ASV
+sum(na.omit(qvalue::qvalue(sapply(asv.models.obj$nadenoma,
+                                  FUN = function(x){ coefficients(summary(x))$cond[2,4]}))$qvalue < .1 ))
+sum(na.omit(qvalue::qvalue(sapply(asv.models.obj$former,
+                                  FUN = function(x){ coefficients(summary(x))$cond[2,4]}))$qvalue < .1 ))
+sum(na.omit(qvalue::qvalue(sapply(asv.models.obj$polyp.tissue,
+                                  FUN = function(x){ coefficients(summary(x))$cond[2,4]}))$qvalue < .1 ))
+sum(na.omit(qvalue::qvalue(sapply(asv.models.obj$location,
+                                  FUN = function(x){ coefficients(summary(x))$cond[2,4]}))$qvalue < .1 ))
+
+# ANALYSIS: TAXA MODELS FECAL GENUS -------------------------------------
+
+# Fecal and oral models will be a little different. This is because there is
+# only 1 samples / ID and thus using ID as a random effect is probably not a
+# good idea. I will just use a standard neg binomial glm for these models.
+
+#fecal #adenoma
+
+set.seed(731)
+fecal_adenoma_models <- NULL
+
+for(i in 1:ncol(fecal_adenoma_genus.df)){
+  fit1 <- NULL
+  tryCatch({fit1 <-
+    glm.nb(fecal_adenoma_genus.df[, i] ~ Adenoma ,
+            data = subset(polyp2_obj$meta, type == "Fecal")
+           );
+  fecal_adenoma_models[[colnames(fecal_adenoma_genus.df)[i]]] <- fit1},
+  error=function(e) e
+
+  )
+}
+
+genus.models.obj$fecal_nadenoma <- fecal_adenoma_models
+
+#fecal former
+set.seed(731)
+fecal_adenoma_models <- NULL
+
+for(i in 1:ncol(fecal_adenoma_genus.df)){
+  fit1 <- NULL
+  tryCatch({fit1 <-
+    glm.nb(fecal_adenoma_genus.df[, i] ~ factor(polyp) ,
+           data = subset(polyp2_obj$meta, type == "Fecal")
+    );
+  fecal_adenoma_models[[colnames(fecal_adenoma_genus.df)[i]]] <- fit1},
+  error=function(e) e
+
+  )
+}
+
+genus.models.obj$fecal_former <- fecal_adenoma_models
+
+# ANALYSIS: TAXA MODELS FECAL ASV ---------------------------------------
+
+#fecal asv #adenoma
+
+set.seed(731)
+fecal_adenoma_models <- NULL
+
+for(i in 1:ncol(fecal_adenoma_asv.df)){
+  fit1 <- NULL
+  tryCatch({fit1 <-
+    glm.nb(fecal_adenoma_asv.df[, i] ~ Adenoma ,
+           data = subset(polyp2_obj$meta, type == "Fecal")
+    );
+  fecal_adenoma_models[[colnames(fecal_adenoma_asv.df)[i]]] <- fit1},
+  error=function(e) e
+
+  )
+}
+
+asv.models.obj$fecal_nadenoma <- fecal_adenoma_models
+
+
+#fecal former
+set.seed(731)
+fecal_adenoma_models <- NULL
+
+for(i in 1:ncol(fecal_adenoma_asv.df)){
+  fit1 <- NULL
+  tryCatch({fit1 <-
+    glm.nb(fecal_adenoma_asv.df[, i] ~ factor(polyp) ,
+           data = subset(polyp2_obj$meta, type == "Fecal")
+    );
+  fecal_adenoma_models[[colnames(fecal_adenoma_asv.df)[i]]] <- fit1},
+  error=function(e) e
+
+  )
+}
+
+asv.models.obj$fecal_former <- fecal_adenoma_models
+fecal_adenoma_models <- NULL
+
+# ANALYSIS: TAXA MODELS ORAL GENUS --------------------------------------
+
+#oral #adenoma
+
+set.seed(731)
+oral_adenoma_models <- NULL
+
+for(i in 1:ncol(oral_adenoma_genus.df)){
+  fit1 <- NULL
+  tryCatch({fit1 <-
+    glm.nb(oral_adenoma_genus.df[, i] ~ Adenoma ,
+           data = subset(polyp2_obj$meta, type == "Oral")
+    );
+  oral_adenoma_models[[colnames(oral_adenoma_genus.df)[i]]] <- fit1},
+  error=function(e) e
+
+  )
+}
+
+genus.models.obj$oral_nadenoma <- oral_adenoma_models
+
+#oral former
+set.seed(731)
+oral_adenoma_models <- NULL
+
+for(i in 1:ncol(oral_adenoma_genus.df)){
+  fit1 <- NULL
+  tryCatch({fit1 <-
+    glm.nb(oral_adenoma_genus.df[, i] ~ factor(polyp) ,
+           data = subset(polyp2_obj$meta, type == "Oral")
+    );
+  oral_adenoma_models[[colnames(oral_adenoma_genus.df)[i]]] <- fit1},
+  error=function(e) e
+
+  )
+}
+
+genus.models.obj$oral_former <- oral_adenoma_models
+
+#basic stats on fdr control genus
+sum(na.omit(qvalue::qvalue(sapply(genus.models.obj$fecal_nadenoma,
+                                  FUN = function(x){ coefficients(summary(x))[2,4]}))$qvalue < .1 ))
+sum(na.omit(qvalue::qvalue(sapply(genus.models.obj$fecal_former,
+                                  FUN = function(x){ coefficients(summary(x))[2,4]}))$qvalue < .1 ))
+sum(na.omit(qvalue::qvalue(sapply(genus.models.obj$oral_nadenoma,
+                                  FUN = function(x){ coefficients(summary(x))[2,4]}))$qvalue < .1 ))
+sum(na.omit(qvalue::qvalue(sapply(genus.models.obj$oral_former,
+                                  FUN = function(x){ coefficients(summary(x))[2,4]}))$qvalue < .1 ))
+
+# ANALYSIS: TAXA MODELS ORAL ASV ----------------------------------------
+
+#oral #adenoma
+
+set.seed(731)
+oral_adenoma_models <- NULL
+
+for(i in 1:ncol(oral_adenoma_asv.df)){
+  fit1 <- NULL
+  tryCatch({fit1 <-
+    glm.nb(oral_adenoma_asv.df[, i] ~ Adenoma ,
+           data = subset(polyp2_obj$meta, type == "Oral")
+    );
+  oral_adenoma_models[[colnames(oral_adenoma_asv.df)[i]]] <- fit1},
+  error=function(e) e
+
+  )
+}
+
+asv.models.obj$oral_nadenoma <- oral_adenoma_models
+
+
+#oral former
+set.seed(731)
+oral_adenoma_models <- NULL
+
+for(i in 1:ncol(oral_adenoma_asv.df)){
+  fit1 <- NULL
+  tryCatch({fit1 <-
+    glm.nb(oral_adenoma_asv.df[, i] ~ factor(polyp) ,
+           data = subset(polyp2_obj$meta, type == "Oral")
+    );
+  oral_adenoma_models[[colnames(oral_adenoma_asv.df)[i]]] <- fit1},
+  error=function(e) e
+
+  )
+}
+
+asv.models.obj$oral_former <- oral_adenoma_models
+oral_adenoma_models<- NULL
+
+#basic stats on fdr control
+sum(na.omit(qvalue::qvalue(
+  sapply(
+    asv.models.obj$fecal_nadenoma,
+    FUN = function(x) {
+      coefficients(summary(x))[2, 4]
+    }
+  )
+)$qvalue < .1))
+
+sum(na.omit(qvalue::qvalue(
+  sapply(
+    asv.models.obj$fecal_former,
+    FUN = function(x) {
+      coefficients(summary(x))[2, 4]
+    }
+  )
+)$qvalue < .1))
+
+sum(na.omit(qvalue::qvalue(
+  sapply(
+    asv.models.obj$oral_nadenoma,
+    FUN = function(x) {
+      coefficients(summary(x))[2, 4]
+    }
+  )
+)$qvalue < .1))
+
+sum(na.omit(qvalue::qvalue(
+  sapply(
+    asv.models.obj$oral_former,
+    FUN = function(x) {
+      coefficients(summary(x))[2, 4]
+    }
+  )
+)$qvalue < .1))
+
+# ANALYSIS: RANDOM FORESTS ------------------------------------------------
+
+#Mucosal
+mucosal_former_asv.rf <- randomForest(x = mucosal_adenoma_asv.df,
+                                  y = factor(unlist(subset(polyp2_obj$meta,
+                                                           type == "Mucosal",
+                                                           select = polyp))))
+
+mucosal_former_genus.rf <- randomForest(x = mucosal_adenoma_genus.df,
+                                  y = factor(unlist(subset(polyp2_obj$meta,
+                                                           type == "Mucosal",
+                                                           select = polyp))))
+
+#Fecal
+fecal_former_asv.rf <- randomForest(x = fecal_adenoma_asv.df,
+                                    y = factor(unlist(subset(polyp2_obj$meta,
+                                                             type == "Fecal",
+                                                             select = polyp))))
+
+fecal_former_genus.rf <- randomForest(x = fecal_adenoma_genus.df,
+                                    y = factor(unlist(subset(polyp2_obj$meta,
+                                                             type == "Fecal",
+                                                             select = polyp))))
+
+#Oral
+oral_former_asv.rf <- randomForest(x = oral_adenoma_asv.df,
+                                    y = factor(unlist(subset(polyp2_obj$meta,
+                                                             type == "Oral",
+                                                             select = polyp))))
+
+oral_former_genus.rf <- randomForest(x = oral_adenoma_genus.df,
+                                    y = factor(unlist(subset(polyp2_obj$meta,
+                                     type == "Oral", select = polyp))))
+
 
