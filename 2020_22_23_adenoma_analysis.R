@@ -1554,6 +1554,9 @@ sum(na.omit(qvalue::qvalue(
   )
 )$qvalue < .1))
 
+# ANALYSIS: TAXA VISUALIZATIONS -------------------------------------------
+
+
 # ANALYSIS: RANDOM FORESTS ------------------------------------------------
 
 #Mucosal
@@ -1562,7 +1565,11 @@ mucosal_former_asv.rf <- randomForest(x = mucosal_adenoma_asv.df,
                                         subset(polyp2_obj$meta,
                                                type == "Mucosal",
                                                select = polyp)
-                                      )))
+                                      )),
+                                      na.action = na.omit,
+                                      importance = T,
+                                      ntree =5000
+                                      )
 
 mucosal_former_genus.rf <-
   randomForest(x = mucosal_adenoma_genus.df,
@@ -1570,7 +1577,11 @@ mucosal_former_genus.rf <-
                  subset(polyp2_obj$meta,
                         type == "Mucosal",
                         select = polyp)
-               )))
+               )),
+               na.action = na.omit,
+               importance = T,
+               ntree =5000
+  )
 
 #Fecal
 fecal_former_asv.rf <- randomForest(x = fecal_adenoma_asv.df,
@@ -1578,14 +1589,22 @@ fecal_former_asv.rf <- randomForest(x = fecal_adenoma_asv.df,
                                       subset(polyp2_obj$meta,
                                              type == "Fecal",
                                              select = polyp)
-                                    )))
+                                    )),
+                                    na.action = na.omit,
+                                    importance = T,
+                                    ntree =5000
+)
 
 fecal_former_genus.rf <- randomForest(x = fecal_adenoma_genus.df,
                                       y = factor(unlist(
                                         subset(polyp2_obj$meta,
                                                type == "Fecal",
                                                select = polyp)
-                                      )))
+                                      )),
+                                      na.action = na.omit,
+                                      importance = T,
+                                      ntree =5000
+)
 
 #Oral
 oral_former_asv.rf <- randomForest(x = oral_adenoma_asv.df,
@@ -1593,10 +1612,182 @@ oral_former_asv.rf <- randomForest(x = oral_adenoma_asv.df,
                                      subset(polyp2_obj$meta,
                                             type == "Oral",
                                             select = polyp)
-                                   )))
+                                   )),
+                                   na.action = na.omit,
+                                   importance = T,
+                                   ntree =5000
+)
 
 oral_former_genus.rf <- randomForest(x = oral_adenoma_genus.df,
                                      y = factor(unlist(
                                        subset(polyp2_obj$meta,
                                               type == "Oral", select = polyp)
-                                     )))
+                                     )),
+                                     na.action = na.omit,
+                                     importance = T,
+                                     ntree =5000
+)
+
+
+# ANALYSIS: RANDOM FORESTS VISUALS ASV ROC CURVES ----------------------------
+
+#mucosal
+mucosal_asv.roc <- roc(factor(unlist(
+  subset(polyp2_obj$meta,
+         type == "Mucosal", select = polyp)
+)), mucosal_former_asv.rf$votes[,2])
+
+#fecal
+fecal_asv.roc <- roc(factor(unlist(
+  subset(polyp2_obj$meta,
+         type == "Fecal", select = polyp)
+)), fecal_former_asv.rf$votes[,2])
+
+#oral
+oral_asv.roc <- roc(factor(unlist(
+  subset(polyp2_obj$meta,
+         type == "Oral", select = polyp)
+)), oral_former_asv.rf$votes[, 2])
+
+#get auc
+
+auc(mucosal_asv.roc)
+auc(fecal_asv.roc)
+auc(oral_asv.roc)
+
+#make data frame for plotting
+
+rf_roc.df <- NULL
+rf_roc.df$variable    <- c(
+  rep("Mucosal",
+      times = length(mucosal_asv.roc$sensitivities)),
+  rep("Fecal",
+      times = length(fecal_asv.roc$sensitivities)),
+  rep("Oral",
+      times = length(oral_asv.roc$sensitivities))
+)
+
+#add sensitivity
+rf_roc.df$sensitivity <-
+  c(
+    mucosal_asv.roc$sensitivities,
+    fecal_asv.roc$sensitivities,
+    oral_asv.roc$sensitivities
+  )
+
+#add specificity
+rf_roc.df$specificity <-
+  c(
+    mucosal_asv.roc$specificities,
+    fecal_asv.roc$specificities,
+    oral_asv.roc$specificities
+  )
+rf_roc.df <- as.data.frame(rf_roc.df)
+
+
+rf_roc.plot <- ggplot(rf_roc.df,
+                      aes(x = specificity,
+                          y = sensitivity,
+                          color = variable))
+
+rf_roc.plot +
+  geom_abline(slope =1, intercept = 1, size = 1, alpha = .4)+
+  geom_path(size = 1.5)+
+  scale_x_reverse(expand = c(0.01,0.02))+
+  theme(text = element_text(size=20, colour = "black"),
+        panel.grid.major = element_line(color = "grey97"),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.line = element_line(colour = "black"),
+        axis.text = element_text(colour = "black"),
+        legend.key = element_blank(),
+        legend.title = element_blank(),
+        legend.position = "top"
+  ) +
+  scale_y_continuous(expand = c(0.0, 0.01))+
+  scale_color_brewer(palette = "Dark2")+
+  ylab("Sensitivity")+
+  xlab("Specificity")
+
+# ANALYSIS: RANDOM FORESTS VISUALS GENUS ROC CURVES ----------------------------
+
+#mucosal
+mucosal_genus.roc <- roc(factor(unlist(
+  subset(polyp2_obj$meta,
+         type == "Mucosal", select = polyp)
+)), mucosal_former_genus.rf$votes[,2])
+
+#fecal
+fecal_genus.roc <- roc(factor(unlist(
+  subset(polyp2_obj$meta,
+         type == "Fecal", select = polyp)
+)), fecal_former_genus.rf$votes[,2])
+
+#oral
+oral_genus.roc <- roc(factor(unlist(
+  subset(polyp2_obj$meta,
+         type == "Oral", select = polyp)
+)), oral_former_genus.rf$votes[, 2])
+
+#get auc
+
+auc(mucosal_genus.roc)
+auc(fecal_genus.roc)
+auc(oral_genus.roc)
+
+#make data frame for plotting
+
+genus_rf_roc.df <- NULL
+genus_rf_roc.df$variable    <- c(
+  rep("Mucosal",
+      times = length(mucosal_genus.roc$sensitivities)),
+  rep("Fecal",
+      times = length(fecal_genus.roc$sensitivities)),
+  rep("Oral",
+      times = length(oral_genus.roc$sensitivities))
+)
+
+#add sensitivity
+genus_rf_roc.df$sensitivity <-
+  c(
+    mucosal_genus.roc$sensitivities,
+    fecal_genus.roc$sensitivities,
+    oral_genus.roc$sensitivities
+  )
+
+#add specificity
+genus_rf_roc.df$specificity <-
+  c(
+    mucosal_genus.roc$specificities,
+    fecal_genus.roc$specificities,
+    oral_genus.roc$specificities
+  )
+genus_rf_roc.df <- as.data.frame(rf_roc.df)
+
+
+genus_rf_roc.plot <- ggplot(genus_rf_roc.df,
+                      aes(x = specificity,
+                          y = sensitivity,
+                          color = variable))
+
+genus_rf_roc.plot +
+  geom_abline(slope =1, intercept = 1, size = 1, alpha = .4)+
+  geom_path(size = 1.5)+
+  scale_x_reverse(expand = c(0.01,0.02))+
+  theme(text = element_text(size=20, colour = "black"),
+        panel.grid.major = element_line(color = "grey97"),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.line = element_line(colour = "black"),
+        axis.text = element_text(colour = "black"),
+        legend.key = element_blank(),
+        legend.title = element_blank(),
+        legend.position = "top"
+  ) +
+  scale_y_continuous(expand = c(0.0, 0.01))+
+  scale_color_brewer(palette = "Dark2")+
+  ylab("Sensitivity")+
+  xlab("Specificity")
+
+# ANALYSIS: RANDOM FORESTS VISUALS MUCOSAL IMPORTANCE PLOT --------------------
+
