@@ -36,12 +36,10 @@ library(randomForest)
 library(qvalue)
 library(gplots)
 library(pROC)
-#library(lme4)
-#library(lmerTest)
 library(MASS)
 library(glmmTMB)
 
-options("stringsAsFactors"=F)
+options("stringsAsFactors" = F)
 
 # FUNCTIONS ---------------------------------------------------------------
 
@@ -54,10 +52,13 @@ options("stringsAsFactors"=F)
 
 #depends on vegan
 
-diversity_analysis <- function(obj){
-  obj$shannon <- vegan::diversity(obj$data, index = "shannon", MARGIN = 1)
-  obj$simpson <- vegan::diversity(obj$data, index = "simpson", MARGIN = 1)
-  obj$invsimpson <- vegan::diversity(obj$data, index = "invsimpson", MARGIN = 1)
+diversity_analysis <- function(obj) {
+  obj$shannon <-
+    vegan::diversity(obj$data, index = "shannon", MARGIN = 1)
+  obj$simpson <-
+    vegan::diversity(obj$data, index = "simpson", MARGIN = 1)
+  obj$invsimpson <-
+    vegan::diversity(obj$data, index = "invsimpson", MARGIN = 1)
   return(obj)
 }
 
@@ -67,27 +68,25 @@ diversity_analysis <- function(obj){
 
 #This function creates ordination objects for plotting later
 
-ordinate <- function(obj){
+ordinate <- function(obj) {
   obj_mmds <- metaMDS(obj$data,
-                      k =5,
-                      distance = "bray"
-  )
+                      k = 5,
+                      distance = "bray")
 
 
   obj_prcomp <- prcomp(obj$data,
-                       scale =T,
-                       center = T
-  )
+                       scale = T,
+                       center = T)
 
   obj$mds  <- obj_mmds
   obj_mmds <- as.data.frame(obj_mmds$points)
-  obj_mmds <- obj_mmds[rownames(obj$meta),]
+  obj_mmds <- obj_mmds[rownames(obj$meta), ]
   obj$mds.df <- obj_mmds
 
 
   obj$prcomp <- obj_prcomp
-  obj_prcomp    <- as.data.frame(obj_prcomp$x[,1:5])
-  obj_prcomp    <- obj_prcomp[rownames(obj$meta),]
+  obj_prcomp    <- as.data.frame(obj_prcomp$x[, 1:5])
+  obj_prcomp    <- obj_prcomp[rownames(obj$meta), ]
   obj$prcomp.df <- obj_prcomp
 
 
@@ -100,7 +99,7 @@ ordinate <- function(obj){
 
 #calculates beta-div between all samples
 
-run_beta <- function(obj){
+run_beta <- function(obj) {
   bdiv <- as.matrix(vegdist(obj$data))
   obj$bdiv <- bdiv
   return(obj)
@@ -110,18 +109,18 @@ run_beta <- function(obj){
 #        Function phylotype_analysis             #
 ###
 
-phylotype_analysis <- function(obj, tax){
+phylotype_analysis <- function(obj, tax) {
   #obj: microbiome object with at least 1 slot (data)
   #tax: a tax object (named list taxa as names values in the list are seq ids)
   obj.out <- NULL
-  for(h in 1:length(tax)){
+  for (h in 1:length(tax)) {
     df <- NULL
-    for( i in 1:length(tax[[h]])){
-      v1       <- obj$data[,unlist(tax[[h]][[i]])]
+    for (i in 1:length(tax[[h]])) {
+      v1       <- obj$data[, unlist(tax[[h]][[i]])]
       v2       <- names(tax[[h]])[i]
-      if(is.null(dim(v1))){
+      if (is.null(dim(v1))) {
         df[[v2]] <- v1
-      }else{
+      } else{
         df[[v2]] <- rowSums(v1)
       }
     }
@@ -137,24 +136,25 @@ phylotype_analysis <- function(obj, tax){
 #This function will calculate the group means across all columns in a
 #dataframe
 
-group_means <- function(df, mapping, t = F){
+group_means <- function(df, mapping, t = F) {
   #df : data frame with rows as sample IDs and columns as objects (e.g. OTUs)
   #mapping : a mapping df with rownames df as rownames and group id in col2
   #t : boolean, defaults to FALSE. Use if df has sample ids as colnames
-  if(t == T){
+  if (t == T) {
     df <- t(df)
   }
-  groups <- base::unique(x=mapping[,2])
-  my_df <- data.frame(matrix(nrow = length(groups), ncol = ncol(df)))
-  for(i in 1:ncol(df)){
+  groups <- base::unique(x = mapping[, 2])
+  my_df <-
+    data.frame(matrix(nrow = length(groups), ncol = ncol(df)))
+  for (i in 1:ncol(df)) {
     tgvec <- NULL
-    for(j in 1:length(groups)){
-      s <- base::rownames(mapping[base::which(mapping[,2] %in% groups[j]),
-                                  ,drop=F])
-      m <- base::mean(df[s,i])
+    for (j in 1:length(groups)) {
+      s <- base::rownames(mapping[base::which(mapping[, 2] %in% groups[j]),
+                                  , drop = F])
+      m <- base::mean(df[s, i])
       tgvec <- c(tgvec, m)
     }
-    my_df[,i] <- tgvec
+    my_df[, i] <- tgvec
   }
   rownames(my_df) <- groups
   colnames(my_df) <- colnames(df)
@@ -171,27 +171,42 @@ filter <- function(df) {
 
 # IMPORT DATA -------------------------------------------------------------
 
-polyp2_asv.df <- read.table("/Users/cgaulke/Documents/research/ohsu_polyp_combined/data/prepped_data/rarefied_10000_adenoma_asv.txt",
-                            sep = "\t",
-                            row.names = 1,
-                            header = T)
-polyp2_asv_rel.df <- read.table("/Users/cgaulke/Documents/research/ohsu_polyp_combined/data/prepped_data/rel_abd_adenoma_asv.txt",
-                                sep = "\t",
-                                row.names = 1,
-                                header = T)
-polyp2_tax.df <- read.table("/Users/cgaulke/Documents/research/ohsu_polyp_combined/data/prepped_data/filtered_adenoma_tax.txt",
-                            sep = "\t",
-                            row.names = 1,
-                            header = T)
-polyp2_metadata.df <- read.table("/Users/cgaulke/Documents/research/ohsu_polyp_combined/data/prepped_data/filtered_combined_metadata.txt",
-                                 sep = "\t",
-                                 row.names = 1,
-                                 header = T)
+polyp2_asv.df <-
+  read.table(
+    "/Users/cgaulke/Documents/research/ohsu_polyp_combined/data/prepped_data/rarefied_10000_adenoma_asv.txt",
+    sep = "\t",
+    row.names = 1,
+    header = T
+  )
+polyp2_asv_rel.df <-
+  read.table(
+    "/Users/cgaulke/Documents/research/ohsu_polyp_combined/data/prepped_data/rel_abd_adenoma_asv.txt",
+    sep = "\t",
+    row.names = 1,
+    header = T
+  )
+polyp2_tax.df <-
+  read.table(
+    "/Users/cgaulke/Documents/research/ohsu_polyp_combined/data/prepped_data/filtered_adenoma_tax.txt",
+    sep = "\t",
+    row.names = 1,
+    header = T
+  )
+polyp2_metadata.df <-
+  read.table(
+    "/Users/cgaulke/Documents/research/ohsu_polyp_combined/data/prepped_data/filtered_combined_metadata.txt",
+    sep = "\t",
+    row.names = 1,
+    header = T
+  )
 
-polyp2_sequence_stats.df <- read.table("/Users/cgaulke/Documents/research/ohsu_polyp_combined/data/prepped_data/filtered_adenoma_sequence_stats.txt",
-                                 sep = "\t",
-                                 row.names = 1,
-                                 header = T)
+polyp2_sequence_stats.df <-
+  read.table(
+    "/Users/cgaulke/Documents/research/ohsu_polyp_combined/data/prepped_data/filtered_adenoma_sequence_stats.txt",
+    sep = "\t",
+    row.names = 1,
+    header = T
+  )
 
 # ANALYSIS: READ COUNT SUMMARY STATS --------------------------------------
 
@@ -214,34 +229,36 @@ median(polyp2_sequence_stats.df$reads.out)
 # ANALYSIS: FILTERED READ COUNT SUMMARY STATS ---------------------------------
 
 # remove samples filtered for rarefaction
-filtered_polyp2_sequence_stats.df <- polyp2_sequence_stats.df[which(rownames(
-  polyp2_sequence_stats.df) %in% rownames(polyp2_metadata.df)),]
+filtered_polyp2_sequence_stats.df <-
+  polyp2_sequence_stats.df[which(rownames(polyp2_sequence_stats.df) %in% rownames(polyp2_metadata.df)), ]
 
 filtered_polyp2_sequence_stats.df$type <- polyp2_metadata.df$type
 
-mfiltered_polyp2_sequence_stats.df <- melt(filtered_polyp2_sequence_stats.df)
+mfiltered_polyp2_sequence_stats.df <-
+  melt(filtered_polyp2_sequence_stats.df)
 
-reads_by_type.hist <- ggplot(data = mfiltered_polyp2_sequence_stats.df[
-  which(mfiltered_polyp2_sequence_stats.df$variable == "reads.out"),],
-       aes(
-           x = value,
-           fill = type)
-          )
+reads_by_type.hist <-
+  ggplot(data = mfiltered_polyp2_sequence_stats.df[which(mfiltered_polyp2_sequence_stats.df$variable == "reads.out"), ],
+         aes(x = value,
+             fill = type))
 
 pdf("figs/qcreads_by_tissue.pdf")
 reads_by_type.hist +
-  geom_histogram(alpha = .5, position = "identity", color = "black")+
-  theme(text = element_text(size=18, colour = "black"),
-        panel.grid.major = element_line(color = "grey97"),
-        panel.grid.minor = element_blank(),
-        panel.background = element_blank(),
-        axis.line = element_line(colour = "black"),
-        axis.text = element_text(colour = "black")
-  )+
-  scale_x_continuous(expand = c(.02,0))+
-  scale_y_continuous(expand = c(.01,0))+
-  ylab("Count")+
-  xlab("Read Depth")+
+  geom_histogram(alpha = .5,
+                 position = "identity",
+                 color = "black") +
+  theme(
+    text = element_text(size = 18, colour = "black"),
+    panel.grid.major = element_line(color = "grey97"),
+    panel.grid.minor = element_blank(),
+    panel.background = element_blank(),
+    axis.line = element_line(colour = "black"),
+    axis.text = element_text(colour = "black")
+  ) +
+  scale_x_continuous(expand = c(.02, 0)) +
+  scale_y_continuous(expand = c(.01, 0)) +
+  ylab("Count") +
+  xlab("Read Depth") +
   scale_fill_brewer("Tissue", palette = "Set1")
 dev.off()
 
@@ -256,21 +273,26 @@ dev.off()
 # had this tissue. I think that we should work with these cases for the longitudinal
 # analysis.
 
-lc.vec    <-  polyp2_metadata.df[polyp2_metadata.df$location == "LC","id"]
-rc.vec    <-  polyp2_metadata.df[polyp2_metadata.df$location == "RC","id"]
-rec.vec   <-  polyp2_metadata.df[polyp2_metadata.df$location == "REC","id"]
-fecal.vec <-  polyp2_metadata.df[polyp2_metadata.df$location == "Fecal","id"]
-oral.vec  <-  polyp2_metadata.df[polyp2_metadata.df$location == "Oral","id"]
+lc.vec    <-
+  polyp2_metadata.df[polyp2_metadata.df$location == "LC", "id"]
+rc.vec    <-
+  polyp2_metadata.df[polyp2_metadata.df$location == "RC", "id"]
+rec.vec   <-
+  polyp2_metadata.df[polyp2_metadata.df$location == "REC", "id"]
+fecal.vec <-
+  polyp2_metadata.df[polyp2_metadata.df$location == "Fecal", "id"]
+oral.vec  <-
+  polyp2_metadata.df[polyp2_metadata.df$location == "Oral", "id"]
 
 #only the three gut tissues
-complete_gut.cases <- unique(rec.vec[which(rec.vec %in% lc.vec & rec.vec %in% rc.vec)])
+complete_gut.cases <-
+  unique(rec.vec[which(rec.vec %in% lc.vec & rec.vec %in% rc.vec)])
 
 #three gut tissues plus fecal and oral
 complete.cases <- unique(rec.vec[which(rec.vec %in% lc.vec &
                                          rec.vec %in% rc.vec &
-                                          rec.vec %in% fecal.vec &
-                                           rec.vec %in% oral.vec)]
-                         )
+                                         rec.vec %in% fecal.vec &
+                                         rec.vec %in% oral.vec)])
 
 # DATA: MAKE OBJECT -------------------------------------------------------
 
@@ -281,30 +303,36 @@ polyp2_obj$rel_abd <- polyp2_asv_rel.df
 
 # DATA: AGGREGATE PHYLOTYPES -----------------------------------------------------
 
-polyp2_taxadf <- polyp2_tax.df[which(rownames(polyp2_tax.df) %in% colnames(polyp2_obj$data)),
-                               ,drop=F]
+polyp2_taxadf <-
+  polyp2_tax.df[which(rownames(polyp2_tax.df) %in% colnames(polyp2_obj$data)),
+                , drop = F]
 
-kingdom.df <- replicate(length(unique(polyp2_taxadf[,2])), c())
-names(kingdom.df) <- unique(polyp2_taxadf[,2])
-phylum.df  <- replicate(length(unique(polyp2_taxadf[,3])), c())
-names(phylum.df) <- unique(polyp2_taxadf[,3])
-class.df   <- replicate(length(unique(polyp2_taxadf[,4])), c())
-names(class.df) <- unique(polyp2_taxadf[,4])
-order.df   <- replicate(length(unique(polyp2_taxadf[,5])), c())
-names(order.df) <- unique(polyp2_taxadf[,5])
-family.df  <- replicate(length(unique(polyp2_taxadf[,6])), c())
-names(family.df) <- unique(polyp2_taxadf[,6])
-genus.df   <- replicate(length(unique(polyp2_taxadf[,7])), c())
-names(genus.df) <- unique(polyp2_taxadf[,7])
+kingdom.df <- replicate(length(unique(polyp2_taxadf[, 2])), c())
+names(kingdom.df) <- unique(polyp2_taxadf[, 2])
+phylum.df  <- replicate(length(unique(polyp2_taxadf[, 3])), c())
+names(phylum.df) <- unique(polyp2_taxadf[, 3])
+class.df   <- replicate(length(unique(polyp2_taxadf[, 4])), c())
+names(class.df) <- unique(polyp2_taxadf[, 4])
+order.df   <- replicate(length(unique(polyp2_taxadf[, 5])), c())
+names(order.df) <- unique(polyp2_taxadf[, 5])
+family.df  <- replicate(length(unique(polyp2_taxadf[, 6])), c())
+names(family.df) <- unique(polyp2_taxadf[, 6])
+genus.df   <- replicate(length(unique(polyp2_taxadf[, 7])), c())
+names(genus.df) <- unique(polyp2_taxadf[, 7])
 
-for(i in 1:nrow(polyp2_taxadf)){
-
-  kingdom.df[[polyp2_taxadf[i, 2]]] <- c(kingdom.df[[polyp2_taxadf[i, 2]]], polyp2_taxadf[i,1])
-  phylum.df[[polyp2_taxadf[i, 3]]]  <- c(phylum.df[[polyp2_taxadf[i, 3]]], polyp2_taxadf[i,1])
-  class.df[[polyp2_taxadf[i, 4]]]   <- c(class.df[[polyp2_taxadf[i, 4]]], polyp2_taxadf[i,1])
-  order.df[[polyp2_taxadf[i, 5]]]   <- c(order.df[[polyp2_taxadf[i, 5]]], polyp2_taxadf[i,1])
-  family.df[[polyp2_taxadf[i, 6]]]  <- c(family.df[[polyp2_taxadf[i, 6]]], polyp2_taxadf[i,1])
-  genus.df[[polyp2_taxadf[i, 7]]]   <- c(genus.df[[polyp2_taxadf[i, 7]]], polyp2_taxadf[i,1])
+for (i in 1:nrow(polyp2_taxadf)) {
+  kingdom.df[[polyp2_taxadf[i, 2]]] <-
+    c(kingdom.df[[polyp2_taxadf[i, 2]]], polyp2_taxadf[i, 1])
+  phylum.df[[polyp2_taxadf[i, 3]]]  <-
+    c(phylum.df[[polyp2_taxadf[i, 3]]], polyp2_taxadf[i, 1])
+  class.df[[polyp2_taxadf[i, 4]]]   <-
+    c(class.df[[polyp2_taxadf[i, 4]]], polyp2_taxadf[i, 1])
+  order.df[[polyp2_taxadf[i, 5]]]   <-
+    c(order.df[[polyp2_taxadf[i, 5]]], polyp2_taxadf[i, 1])
+  family.df[[polyp2_taxadf[i, 6]]]  <-
+    c(family.df[[polyp2_taxadf[i, 6]]], polyp2_taxadf[i, 1])
+  genus.df[[polyp2_taxadf[i, 7]]]   <-
+    c(genus.df[[polyp2_taxadf[i, 7]]], polyp2_taxadf[i, 1])
 
 }
 
@@ -317,7 +345,7 @@ tax.obj$family  <- family.df
 tax.obj$genus   <- genus.df
 
 #aggregate phylotype counts (not really a df, actually an obj)
-polyp2_obj$phylotype <- phylotype_analysis(polyp2_obj,tax = tax.obj)
+polyp2_obj$phylotype <- phylotype_analysis(polyp2_obj, tax = tax.obj)
 
 # ANALYSIS: COMPUTE DIVERSITY ---------------------------------------------
 
@@ -328,139 +356,171 @@ polyp2_obj <- ordinate(polyp2_obj)
 
 # ANALYSIS: SHANNON ------------------------------------------------------
 
-polyp2_obj$shannon.df <- cbind(polyp2_obj$shannon,
-                               polyp2_obj$meta[names(polyp2_obj$shannon),"type"],
-                               polyp2_obj$meta[names(polyp2_obj$shannon),"location"],
-                               polyp2_obj$meta[names(polyp2_obj$shannon),"polyp"],
-                               polyp2_obj$meta[names(polyp2_obj$shannon),"Adenoma"],
-                               polyp2_obj$meta[names(polyp2_obj$shannon),"polyp.tissue"],
-                               polyp2_obj$meta[names(polyp2_obj$shannon),"id"])
+polyp2_obj$shannon.df <- cbind(
+  polyp2_obj$shannon,
+  polyp2_obj$meta[names(polyp2_obj$shannon), "type"],
+  polyp2_obj$meta[names(polyp2_obj$shannon), "location"],
+  polyp2_obj$meta[names(polyp2_obj$shannon), "polyp"],
+  polyp2_obj$meta[names(polyp2_obj$shannon), "Adenoma"],
+  polyp2_obj$meta[names(polyp2_obj$shannon), "polyp.tissue"],
+  polyp2_obj$meta[names(polyp2_obj$shannon), "id"]
+)
 
-colnames(polyp2_obj$shannon.df) <- c("shannon", "tissue", "location", "former", "npolyp", "polyptissue","id")
+colnames(polyp2_obj$shannon.df) <-
+  c("shannon",
+    "tissue",
+    "location",
+    "former",
+    "npolyp",
+    "polyptissue",
+    "id")
+
 polyp2_obj$shannon.df <- as.data.frame(polyp2_obj$shannon.df)
-polyp2_obj$shannon.df$shannon <- as.numeric(polyp2_obj$shannon.df$shannon)
-polyp2_obj$shannon.df$npolyp <- as.numeric(polyp2_obj$shannon.df$npolyp)
+polyp2_obj$shannon.df$shannon <-
+  as.numeric(polyp2_obj$shannon.df$shannon)
+polyp2_obj$shannon.df$npolyp <-
+  as.numeric(polyp2_obj$shannon.df$npolyp)
 
 polyp2_shannon.boxplot <- ggplot(na.omit(polyp2_obj$shannon.df),
                                  aes(x = tissue,
                                      y = shannon,
-                                     fill = former)
-)
+                                     fill = former))
 
 pdf("figs/shannon_tissue_polyp.pdf")
 polyp2_shannon.boxplot +
-  geom_boxplot()+
-  geom_point(position = position_dodge(width= .75), color = "black", shape = 21, alpha = .5 )+
-  theme(text = element_text(size=24, colour = "black"),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.background = element_blank(),
-        axis.line = element_line(colour = "black"),
-        axis.text = element_text(colour = "black"),
-        aspect.ratio = 1.5,
-        legend.position = "top"
-  )+
-  ylab("Shannon")+
-  xlab("")+
-  scale_fill_brewer("", palette = "Dark2", labels = c("Non-Former", "Former"))+
+  geom_boxplot() +
+  geom_point(
+    position = position_dodge(width = .75),
+    color = "black",
+    shape = 21,
+    alpha = .5
+  ) +
+  theme(
+    text = element_text(size = 24, colour = "black"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.background = element_blank(),
+    axis.line = element_line(colour = "black"),
+    axis.text = element_text(colour = "black"),
+    aspect.ratio = 1.5,
+    legend.position = "top"
+  ) +
+  ylab("Shannon") +
+  xlab("") +
+  scale_fill_brewer("",
+                    palette = "Dark2",
+                    labels = c("Non-Former", "Former")) +
   scale_color_brewer("", palette = "Dark2")
 dev.off()
 
 polyp2_shannon.boxplot <- ggplot(na.omit(polyp2_obj$shannon.df),
                                  aes(x = location,
                                      y = shannon,
-                                     fill = former)
-)
+                                     fill = former))
 
 pdf("figs/shannon_location_boxplot.pdf")
 polyp2_shannon.boxplot +
-  geom_boxplot()+
-  geom_point(position = position_dodge(width= .75), color = "black", shape = 21, alpha = .5 )+
-  theme(text = element_text(size=18, colour = "black"),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.background = element_blank(),
-        axis.line = element_line(colour = "black"),
-        axis.text = element_text(colour = "black")
-  )+
-  ylab("Shannon")+
-  xlab("")+
-  scale_fill_brewer("Former", palette = "Dark2")+
+  geom_boxplot() +
+  geom_point(
+    position = position_dodge(width = .75),
+    color = "black",
+    shape = 21,
+    alpha = .5
+  ) +
+  theme(
+    text = element_text(size = 18, colour = "black"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.background = element_blank(),
+    axis.line = element_line(colour = "black"),
+    axis.text = element_text(colour = "black")
+  ) +
+  ylab("Shannon") +
+  xlab("") +
+  scale_fill_brewer("Former", palette = "Dark2") +
   scale_color_brewer("Former", palette = "Dark2")
 dev.off()
 
 #this is the whole enchilada here. It might just be me but I find this really
 #difficult to determine if this actually does what I want here.
 
-lmefit1 <- lmer(shannon ~ npolyp *
-                  factor(tissue) + (1 + tissue|id) ,
-                na.omit(polyp2_obj$shannon.df))
-anova(lmefit1)
+lmefit1 <- glmmTMB(shannon ~ npolyp *
+                     factor(tissue) + (1 | id) ,
+                   na.omit(polyp2_obj$shannon.df))
+
 summary(lmefit1) #sig
 
 #mucosal former effects
 
-lmefit2 <- lmer(shannon ~
-                  npolyp + (1 |id),
-                na.omit(subset(polyp2_obj$shannon.df,subset = tissue=="Mucosal")))
+
+lmefit2 <- glmmTMB(shannon ~
+                     npolyp + (1 | id),
+                   na.omit(subset(
+                     polyp2_obj$shannon.df, subset = tissue == "Mucosal"
+                   )))
 summary(lmefit2) # no sig
 
 #mucosal adenomas with location effects
 
-lmefit3 <- lmer(shannon ~
-                  npolyp + location + (1 |id),
-                na.omit(subset(polyp2_obj$shannon.df,subset = tissue=="Mucosal")))
-anova(lmefit3)
+lmefit3 <- glmmTMB(shannon ~
+                     npolyp + location + (1 | id),
+                   na.omit(subset(
+                     polyp2_obj$shannon.df, subset = tissue == "Mucosal"
+                   )))
 summary(lmefit3) # no sig
 
+# Note:  fecal and oral models only include main effects bc there aren't
+# multiple samples per individual. We use stats::glm
 
 #fecal npolyp
-lmfit1 <- lm(shannon ~
-               npolyp ,
-             na.omit(subset(polyp2_obj$shannon.df,subset = tissue=="Fecal")))
+lmfit1 <- glm(shannon ~
+                npolyp ,
+              data = na.omit(subset(polyp2_obj$shannon.df, tissue == "Fecal")))
+
 summary(lmfit1) #sig
 
-
 #oral npolyp
-#(Note that these models only include main effects bc there aren't multi samples)
 
-lmfit2 <- lm(shannon ~
+lmfit2 <- glm(shannon ~
                 npolyp ,
-             na.omit(subset(polyp2_obj$shannon.df,subset = tissue=="Oral")))
+              data = na.omit(subset(polyp2_obj$shannon.df, tissue == "Oral")))
 summary(lmfit2) #no sig
 
 
 adenoma_shannon.point <- ggplot(na.omit(polyp2_obj$shannon.df),
                                 aes(x = npolyp,
                                     y = shannon,
-                                    color = tissue)
-                                )
+                                    color = tissue))
+
 pdf("figs/shannon_regression.pdf",
-   width = 14, height = 7)
+    width = 14,
+    height = 7)
 
 adenoma_shannon.point +
-  geom_point(size = 3, alpha = .7 ) +
-  geom_smooth(method = "glm", aes(fill = tissue), alpha = .1)+
-  theme(text = element_text(size=18, colour = "black"),
-        panel.grid.major = element_line(color = "grey97"),
-        panel.grid.minor = element_blank(),
-        panel.background = element_blank(),
-        axis.line = element_line(colour = "black"),
-        axis.text = element_text(colour = "black"),
-        strip.background = element_blank(),
-        strip.text = element_blank(),
-        aspect.ratio = 1
-  )+
-  ylab("Shannon")+
-  xlab("Adenomas")+
-  facet_wrap(.~tissue)+
-  scale_color_brewer("Tissue",palette = "Dark2")+
-  scale_fill_brewer("Tissue",palette = "Dark2")
+  geom_point(size = 3, alpha = .7) +
+  geom_smooth(method = "glm", aes(fill = tissue), alpha = .1) +
+  theme(
+    text = element_text(size = 18, colour = "black"),
+    panel.grid.major = element_line(color = "grey97"),
+    panel.grid.minor = element_blank(),
+    panel.background = element_blank(),
+    axis.line = element_line(colour = "black"),
+    axis.text = element_text(colour = "black"),
+    strip.background = element_blank(),
+    strip.text = element_blank(),
+    aspect.ratio = 1
+  ) +
+  ylab("Shannon") +
+  xlab("Adenomas") +
+  facet_wrap(. ~ tissue) +
+  scale_color_brewer("Tissue", palette = "Dark2") +
+  scale_fill_brewer("Tissue", palette = "Dark2")
 
 dev.off()
 
 
 # ANALYSIS: RICHNESS  -----------------------------------------------------
+
 
 #Richness
 polyp2_obj$richness <- as.data.frame(specnumber(polyp2_obj$data))
@@ -475,124 +535,146 @@ polyp2_obj$richness$id <- polyp2_obj$meta$id
 polyp2_richness.plot <- ggplot(na.omit(polyp2_obj$richness),
                                aes(x = tissue,
                                    y = richness,
-                                   fill = former
-                               )
-)
+                                   fill = former))
 
 pdf("figs/richness_tissue_polyp.pdf")
 polyp2_richness.plot +
-  geom_boxplot()+
-  geom_point(position = position_dodge(width= .75), color = "black", shape = 21, alpha = .5 )+
-  theme(text = element_text(size=24, colour = "black"),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.background = element_blank(),
-        axis.line = element_line(colour = "black"),
-        axis.text = element_text(colour = "black"),
-        aspect.ratio = 1.5,
-        legend.position = "top"
-  )+
-  ylab("Richness")+
-  xlab("")+
-  scale_fill_brewer("", palette = "Dark2", labels = c("Non-Former", "Former"))+
+  geom_boxplot() +
+  geom_point(
+    position = position_dodge(width = .75),
+    color = "black",
+    shape = 21,
+    alpha = .5
+  ) +
+  theme(
+    text = element_text(size = 24, colour = "black"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.background = element_blank(),
+    axis.line = element_line(colour = "black"),
+    axis.text = element_text(colour = "black"),
+    aspect.ratio = 1.5,
+    legend.position = "top"
+  ) +
+  ylab("Richness") +
+  xlab("") +
+  scale_fill_brewer("",
+                    palette = "Dark2",
+                    labels = c("Non-Former", "Former")) +
   scale_color_brewer("", palette = "Dark2")
 dev.off()
 
 
 polyp2_richness.boxplot <- ggplot(na.omit(polyp2_obj$richness),
-                                 aes(x = location,
-                                     y = richness,
-                                     fill = former)
-)
+                                  aes(x = location,
+                                      y = richness,
+                                      fill = former))
 
 pdf("figs/richness_location_boxplot.pdf")
 polyp2_richness.boxplot +
-  geom_boxplot()+
-  geom_point(position = position_dodge(width= .75), color = "black", shape = 21, alpha = .5 )+
-  theme(text = element_text(size=18, colour = "black"),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.background = element_blank(),
-        axis.line = element_line(colour = "black"),
-        axis.text = element_text(colour = "black")
-  )+
-  ylab("Richness")+
-  xlab("")+
-  scale_fill_brewer("Former", palette = "Dark2")+
+  geom_boxplot() +
+  geom_point(
+    position = position_dodge(width = .75),
+    color = "black",
+    shape = 21,
+    alpha = .5
+  ) +
+  theme(
+    text = element_text(size = 18, colour = "black"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.background = element_blank(),
+    axis.line = element_line(colour = "black"),
+    axis.text = element_text(colour = "black")
+  ) +
+  ylab("Richness") +
+  xlab("") +
+  scale_fill_brewer("Former", palette = "Dark2") +
   scale_color_brewer("Former", palette = "Dark2")
 dev.off()
 
 
 adenoma_richness.point <- ggplot(na.omit(polyp2_obj$richness),
-                                aes(x = npolyp,
-                                    y = richness,
-                                    color = tissue)
-)
+                                 aes(x = npolyp,
+                                     y = richness,
+                                     color = tissue))
 
-# So I think that what we can say here is that the there are tissue level differences
-# in richness (no surprise here). The relationship with number of polyps is
-# interesting but I am not sure exactly how to interpret the tissue level
-# interaction terms.
+# So I think that what we can say here is that the there are tissue level
+# differences in richness (no surprise here). The relationship with number
+# of polyps is interesting.
 
-lmerich_fit1 <- lmer(richness ~ npolyp * factor(tissue) +
-                (1 +tissue|id) ,na.omit(polyp2_obj$richness))
-anova(lmerich_fit1)
+lmerich_fit1 <- glmmTMB(richness ~ npolyp * factor(tissue) +
+                          (1 | id) ,
+                        na.omit(polyp2_obj$richness))
+
 summary(lmerich_fit1)#sig
 
 #mucosal former effects
-lmerich_fit2 <- lmer(richness ~
-                       npolyp + (1|id),
-                     na.omit(subset(polyp2_obj$richness,subset = tissue=="Mucosal")))
+lmerich_fit2 <- glmmTMB(richness ~
+                          npolyp + (1 | id),
+                        na.omit(subset(polyp2_obj$richness, subset = tissue ==
+                                         "Mucosal")))
 summary(lmerich_fit2)#no sig
-
-#fecal former
-#(Note that these models only include main effects bc there aren't multi samples)
-lmrich_fit1 <- lm(richness ~
-                    npolyp ,
-                  na.omit(subset(polyp2_obj$richness,subset = tissue=="Fecal")))
-summary(lmrich_fit1)#sig
-
-#oral former
-#(Note that these models only include main effects bc there aren't multi samples)
-
-lmrich_fit2 <- lm(richness ~
-                    npolyp ,
-                  na.omit(subset(polyp2_obj$richness,subset = tissue=="Oral")))
-summary(lmrich_fit2) #no sig
-
 
 #mucosal adenomas with location effects
 
-lmerichfit3 <- lmer(richness ~
-                  npolyp + location + (1 |id),
-                na.omit(subset(polyp2_obj$richness,subset = tissue=="Mucosal")))
-anova(lmerichfit3)
-summary(lmerichfit3) # marginal sig
+lmerichfit3 <- glmmTMB(richness ~
+                         npolyp + location + (1 | id),
+                       na.omit(subset(polyp2_obj$richness,  tissue ==
+                                        "Mucosal")))
+lmerichfit3.null <- glmmTMB(richness ~
+                              (1 | id),
+                            na.omit(subset(polyp2_obj$richness,  tissue ==
+                                             "Mucosal")))
+
+anova(lmerichfit3.null, lmerichfit3) #marginally sig
+summary(lmerichfit3) # sig only for rectum
+
+#fecal former
+# Note: These models only include main effects because there aren't multiple
+# samples for each individual
+lmrich_fit1 <- glm(richness ~
+                     npolyp ,
+                   data = na.omit(subset(polyp2_obj$richness, tissue == "Fecal")))
+summary(lmrich_fit1)#sig
+
+#oral former
+# Note: These models only include main effects because there aren't multiple
+# samples for each individual
+
+lmrich_fit2 <- glm(richness ~
+                     npolyp ,
+                   data = na.omit(subset(polyp2_obj$richness, tissue == "Oral")))
+summary(lmrich_fit2) #no sig
+
 
 # These results mirror those from the original (separate) analyses which indicate
-# that only fecal alpha diversity associates with number of polyps
+# that only fecal alpha diversity associates with number of adenomas
 
 
-pdf("figs/richness_regression.pdf", width = 14, height = 7)
+pdf("figs/richness_regression.pdf",
+    width = 14,
+    height = 7)
 
 adenoma_richness.point +
-  geom_point(size = 3, alpha = .7 ) +
-  geom_smooth(method = "glm", aes(fill = tissue), alpha = .1)+
-  theme(text = element_text(size=18, colour = "black"),
-        panel.grid.major = element_line(color = "grey97"),
-        panel.grid.minor = element_blank(),
-        panel.background = element_blank(),
-        axis.line = element_line(colour = "black"),
-        axis.text = element_text(colour = "black"),
-        strip.background = element_blank(),
-        strip.text = element_blank(),
-        aspect.ratio = 1
-  )+
-  ylab("Richness")+
-  xlab("Adenomas")+
-  facet_wrap(.~tissue)+
-  scale_color_brewer("Tissue",palette = "Dark2")+
-  scale_fill_brewer("Tissue",palette = "Dark2")
+  geom_point(size = 3, alpha = .7) +
+  geom_smooth(method = "glm", aes(fill = tissue), alpha = .1) +
+  theme(
+    text = element_text(size = 18, colour = "black"),
+    panel.grid.major = element_line(color = "grey97"),
+    panel.grid.minor = element_blank(),
+    panel.background = element_blank(),
+    axis.line = element_line(colour = "black"),
+    axis.text = element_text(colour = "black"),
+    strip.background = element_blank(),
+    strip.text = element_blank(),
+    aspect.ratio = 1
+  ) +
+  ylab("Richness") +
+  xlab("Adenomas") +
+  facet_wrap(. ~ tissue) +
+  scale_color_brewer("Tissue", palette = "Dark2") +
+  scale_fill_brewer("Tissue", palette = "Dark2")
 
 dev.off()
 
@@ -607,90 +689,101 @@ polyp2_obj$mds.df$former       <- polyp2_obj$meta$polyp
 polyp2_obj$mds.df$npolyp       <- polyp2_obj$meta$Adenoma
 polyp2_obj$mds.df$polyp.tissue <- polyp2_obj$meta$polyp.tissue
 polyp2_obj$mds.df$location     <- polyp2_obj$meta$location
-polyp2_obj$mds.df$nbin         <- cut(polyp2_obj$mds.df$npolyp, # for plotting
-                                      breaks = c(-1, 0.1,2.1,5,10, 20 ),
-                                      labels = c("0","1-2", "3-5","6-10","10+"))
+polyp2_obj$mds.df$nbin         <-
+  cut(
+    polyp2_obj$mds.df$npolyp,
+    # for plotting
+    breaks = c(-1, 0.1, 2.1, 5, 10, 20),
+    labels = c("0", "1-2", "3-5", "6-10", "10+")
+  )
 
 tissue_mds.ord <- ggplot(na.omit(polyp2_obj$mds.df),
-                            aes(x = MDS1,
-                                y = MDS2,
-                                color = tissue)
-)
+                         aes(x = MDS1,
+                             y = MDS2,
+                             color = tissue))
 
 pdf("figs/tissue_nmds.pdf")
 tissue_mds.ord +
-  geom_point( size = 3, alpha = .4 )+
-  theme(text = element_text(size=18, colour = "black"),
-        panel.grid.major = element_line(color = "grey97"),
-        panel.grid.minor = element_blank(),
-        panel.background = element_blank(),
-        panel.border     = element_rect(fill = NA),
-        axis.line = element_line(colour = "black"),
-        axis.text = element_text(colour = "black"),
-        strip.background = element_blank(),
-        strip.text = element_blank(),
-        aspect.ratio = 1,
-        legend.position = "top"
+  geom_point(size = 3, alpha = .4) +
+  theme(
+    text = element_text(size = 18, colour = "black"),
+    panel.grid.major = element_line(color = "grey97"),
+    panel.grid.minor = element_blank(),
+    panel.background = element_blank(),
+    panel.border     = element_rect(fill = NA),
+    axis.line = element_line(colour = "black"),
+    axis.text = element_text(colour = "black"),
+    strip.background = element_blank(),
+    strip.text = element_blank(),
+    aspect.ratio = 1,
+    legend.position = "top"
   ) +
-  scale_color_brewer("",palette = "Dark2")
+  scale_color_brewer("", palette = "Dark2")
 dev.off()
 
 
-mucosal_mds.ord <- ggplot(na.omit(subset(polyp2_obj$mds.df,subset = tissue == "Mucosal")),
-                         aes(x = MDS1,
-                             y = MDS2,
-                             color = nbin
-                             )
-)
+
+mucosal_mds.ord <-
+  ggplot(na.omit(subset(polyp2_obj$mds.df, subset = tissue == "Mucosal")),
+         aes(x = MDS1,
+             y = MDS2,
+             color = nbin))
 
 pdf("figs/mucosal_nmds.pdf")
 mucosal_mds.ord +
   geom_point(aes(alpha = as.character(nbin)),
-             size =3 ) +
-  theme(text = element_text(size=18, colour = "black"),
-        panel.grid.major = element_line(color = "grey97"),
-        panel.grid.minor = element_blank(),
-        panel.background = element_blank(),
-        panel.border     = element_rect(fill = NA),
-        axis.line = element_line(colour = "black"),
-        axis.text = element_text(colour = "black"),
-        strip.background = element_blank(),
-        strip.text = element_blank(),
-        aspect.ratio = 1
-  )+
-  scale_alpha_manual("", breaks = c("0", "1-2", "3-5" , "6-10", "10+"),
-                     values =  c(0.1, 0.7, 0.7, 0.7, .7))+
-  scale_color_brewer("Adenomas", palette = "Set1")+
+             size = 3) +
+  theme(
+    text = element_text(size = 18, colour = "black"),
+    panel.grid.major = element_line(color = "grey97"),
+    panel.grid.minor = element_blank(),
+    panel.background = element_blank(),
+    panel.border     = element_rect(fill = NA),
+    axis.line = element_line(colour = "black"),
+    axis.text = element_text(colour = "black"),
+    strip.background = element_blank(),
+    strip.text = element_blank(),
+    aspect.ratio = 1
+  ) +
+  scale_alpha_manual(
+    "",
+    breaks = c("0", "1-2", "3-5" , "6-10", "10+"),
+    values =  c(0.1, 0.7, 0.7, 0.7, .7)
+  ) +
+  scale_color_brewer("Adenomas", palette = "Set1") +
   guides(alpha = FALSE)
 dev.off()
 
 #fecal
 
-fecal_mds.ord <- ggplot(na.omit(subset(polyp2_obj$mds.df,subset = tissue == "Fecal")),
-                          aes(x = MDS1,
-                              y = MDS2,
-                              color = nbin
-                          )
-)
+fecal_mds.ord <-
+  ggplot(na.omit(subset(polyp2_obj$mds.df, subset = tissue == "Fecal")),
+         aes(x = MDS1,
+             y = MDS2,
+             color = nbin))
 
 pdf("figs/fecal_nmds.pdf")
 fecal_mds.ord +
   geom_point(aes(alpha = as.character(nbin)),
-             size =3 ) +
-  theme(text = element_text(size=18, colour = "black"),
-        panel.grid.major = element_line(color = "grey97"),
-        panel.grid.minor = element_blank(),
-        panel.background = element_blank(),
-        panel.border     = element_rect(fill = NA),
-        axis.line = element_line(colour = "black"),
-        axis.text = element_text(colour = "black"),
-        strip.background = element_blank(),
-        strip.text = element_blank(),
-        aspect.ratio = 1
-  )+
-  scale_alpha_manual("", breaks = c("0", "1-2", "3-5" , "6-10", "10+"),
-                     values =  c(0.1, 0.7, 0.7, 0.7, .7))+
-  scale_color_brewer("Adenomas", palette = "Set1")+
+             size = 3) +
+  theme(
+    text = element_text(size = 18, colour = "black"),
+    panel.grid.major = element_line(color = "grey97"),
+    panel.grid.minor = element_blank(),
+    panel.background = element_blank(),
+    panel.border     = element_rect(fill = NA),
+    axis.line = element_line(colour = "black"),
+    axis.text = element_text(colour = "black"),
+    strip.background = element_blank(),
+    strip.text = element_blank(),
+    aspect.ratio = 1
+  ) +
+  scale_alpha_manual(
+    "",
+    breaks = c("0", "1-2", "3-5" , "6-10", "10+"),
+    values =  c(0.1, 0.7, 0.7, 0.7, .7)
+  ) +
+  scale_color_brewer("Adenomas", palette = "Set1") +
   guides(alpha = FALSE)
 dev.off()
 
@@ -698,31 +791,34 @@ dev.off()
 
 #oral
 
-oral_mds.ord <- ggplot(na.omit(subset(polyp2_obj$mds.df,subset = tissue == "Oral")),
-                        aes(x = MDS1,
-                            y = MDS2,
-                            color = nbin
-                        )
-)
+oral_mds.ord <-
+  ggplot(na.omit(subset(polyp2_obj$mds.df, subset = tissue == "Oral")),
+         aes(x = MDS1,
+             y = MDS2,
+             color = nbin))
 
 pdf("figs/oral_nmds.pdf")
 oral_mds.ord +
   geom_point(aes(alpha = as.character(nbin)),
-             size =3 ) +
-  theme(text = element_text(size=18, colour = "black"),
-        panel.grid.major = element_line(color = "grey97"),
-        panel.grid.minor = element_blank(),
-        panel.background = element_blank(),
-        panel.border     = element_rect(fill = NA),
-        axis.line = element_line(colour = "black"),
-        axis.text = element_text(colour = "black"),
-        strip.background = element_blank(),
-        strip.text = element_blank(),
-        aspect.ratio = 1
-  )+
-  scale_alpha_manual("", breaks = c("0", "1-2", "3-5" , "6-10", "10+"),
-                     values =  c(0.1, 0.7, 0.7, 0.7, .7))+
-  scale_color_brewer("Adenomas", palette = "Set1")+
+             size = 3) +
+  theme(
+    text = element_text(size = 18, colour = "black"),
+    panel.grid.major = element_line(color = "grey97"),
+    panel.grid.minor = element_blank(),
+    panel.background = element_blank(),
+    panel.border     = element_rect(fill = NA),
+    axis.line = element_line(colour = "black"),
+    axis.text = element_text(colour = "black"),
+    strip.background = element_blank(),
+    strip.text = element_blank(),
+    aspect.ratio = 1
+  ) +
+  scale_alpha_manual(
+    "",
+    breaks = c("0", "1-2", "3-5" , "6-10", "10+"),
+    values =  c(0.1, 0.7, 0.7, 0.7, .7)
+  ) +
+  scale_color_brewer("Adenomas", palette = "Set1") +
   guides(alpha = FALSE)
 dev.off()
 
@@ -731,9 +827,12 @@ dev.off()
 
 #start with one big model that includes all the data
 set.seed(731)
-tissue_npolyp.adonis <- adonis(polyp2_obj$data ~  polyp2_obj$meta$Adenoma * polyp2_obj$meta$type,
-                                                    permutations = 5000,
-                                                    method = "bray")
+tissue_npolyp.adonis <-
+  adonis(
+    polyp2_obj$data ~  polyp2_obj$meta$Adenoma * polyp2_obj$meta$type,
+    permutations = 5000,
+    method = "bray"
+  )
 tissue_npolyp.adonis
 
 #this model indicates that there are significant impacts of tissue and number of
@@ -744,7 +843,7 @@ tissue_npolyp.adonis
 set.seed(731)
 mucosal_npolyp.adonis <-
   adonis(
-    polyp2_obj$data[rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Mucosal"), ]),] ~
+    polyp2_obj$data[rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Mucosal"),]), ] ~
       polyp2_obj$meta[which(polyp2_obj$meta$type == "Mucosal"), "Adenoma"] +
       polyp2_obj$meta[which(polyp2_obj$meta$type == "Mucosal"), "location"],
     permutations = 5000,
@@ -760,7 +859,7 @@ mucosal_npolyp.adonis
 set.seed(731)
 
 fecal_npolyp.adonis <-
-  adonis(polyp2_obj$data[rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Fecal"), ]),] ~
+  adonis(polyp2_obj$data[rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Fecal"),]), ] ~
            polyp2_obj$meta[which(polyp2_obj$meta$type == "Fecal"), "Adenoma"] ,
          permutations = 5000,
          method = "bray")
@@ -771,7 +870,7 @@ fecal_npolyp.adonis #not significant
 set.seed(731)
 
 oral_npolyp.adonis <-
-  adonis(polyp2_obj$data[rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Oral"), ]),] ~
+  adonis(polyp2_obj$data[rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Oral"),]), ] ~
            polyp2_obj$meta[which(polyp2_obj$meta$type == "Oral"), "Adenoma"] ,
          permutations = 5000,
          method = "bray")
@@ -782,9 +881,12 @@ oral_npolyp.adonis #not significant
 
 #start with one big model that includes all the data
 set.seed(731)
-gtissue_npolyp.adonis <- adonis(polyp2_obj$phylotype$genus ~  polyp2_obj$meta$Adenoma * polyp2_obj$meta$type,
-                               permutations = 5000,
-                               method = "bray")
+gtissue_npolyp.adonis <-
+  adonis(
+    polyp2_obj$phylotype$genus ~  polyp2_obj$meta$Adenoma * polyp2_obj$meta$type,
+    permutations = 5000,
+    method = "bray"
+  )
 gtissue_npolyp.adonis
 
 #this model indicates that there are significant impacts of tissue and number of
@@ -795,7 +897,7 @@ gtissue_npolyp.adonis
 set.seed(731)
 gmucosal_npolyp.adonis <-
   adonis(
-    polyp2_obj$phylotype$genus[rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Mucosal"), ]),] ~
+    polyp2_obj$phylotype$genus[rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Mucosal"),]), ] ~
       polyp2_obj$meta[which(polyp2_obj$meta$type == "Mucosal"), "Adenoma"] +
       polyp2_obj$meta[which(polyp2_obj$meta$type == "Mucosal"), "location"],
     permutations = 5000,
@@ -811,10 +913,12 @@ gmucosal_npolyp.adonis
 set.seed(731)
 
 gfecal_npolyp.adonis <-
-  adonis(polyp2_obj$phylotype$genus[rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Fecal"), ]),] ~
-           polyp2_obj$meta[which(polyp2_obj$meta$type == "Fecal"), "Adenoma"] ,
-         permutations = 5000,
-         method = "bray")
+  adonis(
+    polyp2_obj$phylotype$genus[rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Fecal"),]), ] ~
+      polyp2_obj$meta[which(polyp2_obj$meta$type == "Fecal"), "Adenoma"] ,
+    permutations = 5000,
+    method = "bray"
+  )
 
 gfecal_npolyp.adonis #not significant
 
@@ -822,10 +926,12 @@ gfecal_npolyp.adonis #not significant
 set.seed(731)
 
 goral_npolyp.adonis <-
-  adonis(polyp2_obj$phylotype$genus[rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Oral"), ]),] ~
-           polyp2_obj$meta[which(polyp2_obj$meta$type == "Oral"), "Adenoma"] ,
-         permutations = 5000,
-         method = "bray")
+  adonis(
+    polyp2_obj$phylotype$genus[rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Oral"),]), ] ~
+      polyp2_obj$meta[which(polyp2_obj$meta$type == "Oral"), "Adenoma"] ,
+    permutations = 5000,
+    method = "bray"
+  )
 
 goral_npolyp.adonis #not significant
 
@@ -844,28 +950,24 @@ goral_npolyp.adonis #not significant
 # that taxa that are only present on adenoma tissue will not be filtered. For
 # consistency we will apply this same threshold to other tissues.
 
+
 #Fecal ASV
 fecal_adenoma_asv.df <-
   polyp2_obj$data[which(rownames(polyp2_obj$data) %in%
-       rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Fecal"),]
-        )
-  ),
-  ]
+                          rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Fecal"),])), ]
 
 #Filter
 fecal_adenoma_asv.df <-
-  fecal_adenoma_asv.df[,apply(fecal_adenoma_asv.df, 2,
-                function(x){sum(as.logical(x)) >
-                    round(nrow(fecal_adenoma_asv.df) * .2)})
-  ]
+  fecal_adenoma_asv.df[, apply(fecal_adenoma_asv.df, 2,
+                               function(x) {
+                                 sum(as.logical(x)) >
+                                   round(nrow(fecal_adenoma_asv.df) * .2)
+                               })]
 
 #Fecal Genus
 fecal_adenoma_genus.df <-
   polyp2_obj$phylotype$genus[which(rownames(polyp2_obj$phylotype$genus) %in%
-           rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Fecal"),]
-                                              )
-                                   ),
-                             ]
+                                     rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Fecal"),])), ]
 
 #Filter
 fecal_adenoma_genus.df <-
@@ -881,63 +983,56 @@ fecal_adenoma_genus.df <-
 #Mucosal ASV
 mucosal_adenoma_asv.df <-
   polyp2_obj$data[which(rownames(polyp2_obj$data) %in%
-        rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Mucosal"),]
-                )
-  ),
-  ]
+                          rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Mucosal"),])), ]
 
 #Filter
 mucosal_adenoma_asv.df <-
-  mucosal_adenoma_asv.df[,apply(mucosal_adenoma_asv.df, 2,
-                      function(x){sum(as.logical(x)) >
-                          round(nrow(mucosal_adenoma_asv.df) * .2)})
-  ]
+  mucosal_adenoma_asv.df[, apply(mucosal_adenoma_asv.df, 2,
+                                 function(x) {
+                                   sum(as.logical(x)) >
+                                     round(nrow(mucosal_adenoma_asv.df) * .2)
+                                 })]
 
 #MucosalGenus
 mucosal_adenoma_genus.df <-
   polyp2_obj$phylotype$genus[which(rownames(polyp2_obj$phylotype$genus) %in%
-      rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Mucosal"),]
-               )
-  ),
-  ]
+                                     rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Mucosal"),])), ]
 
 #Filter
 mucosal_adenoma_genus.df <-
-  mucosal_adenoma_genus.df[,apply(mucosal_adenoma_genus.df, 2,
-              function(x){sum(as.logical(x)) >
-                  round(nrow(mucosal_adenoma_genus.df) * .2)})
-  ]
+  mucosal_adenoma_genus.df[, apply(mucosal_adenoma_genus.df, 2,
+                                   function(x) {
+                                     sum(as.logical(x)) >
+                                       round(nrow(mucosal_adenoma_genus.df) * .2)
+                                   })]
 
 
 #Oral ASV
 oral_adenoma_asv.df <-
   polyp2_obj$data[which(rownames(polyp2_obj$data) %in%
-        rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Oral"), ])),]
+                          rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Oral"), ])),]
 
 #Filter
 oral_adenoma_asv.df <-
   oral_adenoma_asv.df[, apply(oral_adenoma_asv.df, 2,
                               function(x) {
                                 sum(as.logical(x)) >
-                        round(nrow(oral_adenoma_asv.df) * .2)
+                                  round(nrow(oral_adenoma_asv.df) * .2)
                               })]
 
 #Oral Genus
 oral_adenoma_genus.df <-
   polyp2_obj$phylotype$genus[which(rownames(polyp2_obj$phylotype$genus) %in%
-              rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Oral"),]
-                      )
-  ),
-  ]
+                                     rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Oral"),])), ]
 
 #Filter
 
 oral_adenoma_genus.df <-
-  oral_adenoma_genus.df[,apply(oral_adenoma_genus.df, 2,
-                      function(x){
-                        sum(as.logical(x)) >
-                          round(nrow(oral_adenoma_genus.df) * .2)})
-]
+  oral_adenoma_genus.df[, apply(oral_adenoma_genus.df, 2,
+                                function(x) {
+                                  sum(as.logical(x)) >
+                                    round(nrow(oral_adenoma_genus.df) * .2)
+                                })]
 
 #make master objects
 asv.models.obj   <- NULL
@@ -949,14 +1044,20 @@ genus.models.obj <- NULL
 set.seed(731)
 mucosal_adenoma_models <- NULL
 
-for(i in 1:ncol(mucosal_adenoma_genus.df)){
+for (i in 1:ncol(mucosal_adenoma_genus.df)) {
   fit1 <- NULL
-  tryCatch({fit1 <-
-    glmmTMB(mucosal_adenoma_genus.df[, i] ~ Adenoma + (1 |id),
-             data = subset(polyp2_obj$meta, type == "Mucosal"), family=nbinom1);
-  mucosal_adenoma_models[[colnames(mucosal_adenoma_genus.df)[i]]] <- fit1}, error=function(e) e
+  tryCatch({
+    fit1 <-
+      glmmTMB(
+        mucosal_adenoma_genus.df[, i] ~ Adenoma + (1 | id),
+        data = subset(polyp2_obj$meta, type == "Mucosal"),
+        family = nbinom1
+      )
 
-  )
+    mucosal_adenoma_models[[colnames(mucosal_adenoma_genus.df)[i]]] <-
+      fit1
+  }, error = function(e)
+    e)
 }
 
 #assign to proper slot so we can recycle the object
@@ -966,15 +1067,21 @@ genus.models.obj$nadenoma <- mucosal_adenoma_models
 set.seed(731)
 mucosal_adenoma_models <- NULL
 
-for(i in 1:ncol(mucosal_adenoma_genus.df)){
+for (i in 1:ncol(mucosal_adenoma_genus.df)) {
   fit1 <- NULL
-  tryCatch({fit1 <-
-    glmmTMB(mucosal_adenoma_genus.df[, i] ~ factor(polyp) + (1 |id),
-            data = subset(polyp2_obj$meta, type == "Mucosal"), family=nbinom1)
-    ;
-  mucosal_adenoma_models[[colnames(mucosal_adenoma_genus.df)[i]]] <- fit1}, error=function(e) e
+  tryCatch({
+    fit1 <-
+      glmmTMB(
+        mucosal_adenoma_genus.df[, i] ~ factor(polyp) + (1 | id),
+        data = subset(polyp2_obj$meta, type == "Mucosal"),
+        family = nbinom1
+      )
 
-  )
+
+    mucosal_adenoma_models[[colnames(mucosal_adenoma_genus.df)[i]]] <-
+      fit1
+  }, error = function(e)
+    e)
 }
 
 #assign to proper slot so we can recycle the object
@@ -984,15 +1091,21 @@ genus.models.obj$former <- mucosal_adenoma_models
 set.seed(731)
 mucosal_adenoma_models <- NULL
 
-for(i in 1:ncol(mucosal_adenoma_genus.df)){
+for (i in 1:ncol(mucosal_adenoma_genus.df)) {
   fit1 <- NULL
-  tryCatch({fit1 <-
-    glmmTMB(mucosal_adenoma_genus.df[, i] ~ factor(polyp.tissue) + (1 |id),
-            data = subset(polyp2_obj$meta, type == "Mucosal"), family=nbinom1)
-  ;
-  mucosal_adenoma_models[[colnames(mucosal_adenoma_genus.df)[i]]] <- fit1}, error=function(e) e
+  tryCatch({
+    fit1 <-
+      glmmTMB(
+        mucosal_adenoma_genus.df[, i] ~ factor(polyp.tissue) + (1 | id),
+        data = subset(polyp2_obj$meta, type == "Mucosal"),
+        family = nbinom1
+      )
 
-  )
+
+    mucosal_adenoma_models[[colnames(mucosal_adenoma_genus.df)[i]]] <-
+      fit1
+  }, error = function(e)
+    e)
 }
 
 #assign to proper slot so we can recycle the object
@@ -1002,15 +1115,21 @@ genus.models.obj$polyp.tissue <- mucosal_adenoma_models
 set.seed(731)
 mucosal_adenoma_models <- NULL
 
-for(i in 1:ncol(mucosal_adenoma_genus.df)){
+for (i in 1:ncol(mucosal_adenoma_genus.df)) {
   fit1 <- NULL
-  tryCatch({fit1 <-
-    glmmTMB(mucosal_adenoma_genus.df[, i] ~ factor(location) + (1 |id),
-            data = subset(polyp2_obj$meta, type == "Mucosal"), family=nbinom1)
-  ;
-  mucosal_adenoma_models[[colnames(mucosal_adenoma_genus.df)[i]]] <- fit1}, error=function(e) e
+  tryCatch({
+    fit1 <-
+      glmmTMB(
+        mucosal_adenoma_genus.df[, i] ~ factor(location) + (1 | id),
+        data = subset(polyp2_obj$meta, type == "Mucosal"),
+        family = nbinom1
+      )
 
-  )
+
+    mucosal_adenoma_models[[colnames(mucosal_adenoma_genus.df)[i]]] <-
+      fit1
+  }, error = function(e)
+    e)
 }
 
 #assign to proper slot so we can recycle the object
@@ -1059,15 +1178,21 @@ sum(na.omit(qvalue::qvalue(
 set.seed(731)
 mucosal_adenoma_models <- NULL
 
-for(i in 1:ncol(mucosal_adenoma_asv.df)){
+for (i in 1:ncol(mucosal_adenoma_asv.df)) {
   fit1 <- NULL
-  tryCatch({fit1 <-
-    glmmTMB(mucosal_adenoma_asv.df[, i] ~ Adenoma + (1 |id),
-            data = subset(polyp2_obj$meta, type == "Mucosal"), family=nbinom1);
-  mucosal_adenoma_models[[colnames(mucosal_adenoma_asv.df)[i]]] <- fit1},
-    error=function(e) e
+  tryCatch({
+    fit1 <-
+      glmmTMB(
+        mucosal_adenoma_asv.df[, i] ~ Adenoma + (1 | id),
+        data = subset(polyp2_obj$meta, type == "Mucosal"),
+        family = nbinom1
+      )
 
-  )
+    mucosal_adenoma_models[[colnames(mucosal_adenoma_asv.df)[i]]] <-
+      fit1
+  },
+  error = function(e)
+    e)
 }
 
 asv.models.obj$nadenoma <- mucosal_adenoma_models
@@ -1076,15 +1201,21 @@ asv.models.obj$nadenoma <- mucosal_adenoma_models
 set.seed(731)
 mucosal_adenoma_models <- NULL
 
-for(i in 1:ncol(mucosal_adenoma_asv.df)){
+for (i in 1:ncol(mucosal_adenoma_asv.df)) {
   fit1 <- NULL
-  tryCatch({fit1 <-
-    glmmTMB(mucosal_adenoma_asv.df[, i] ~ factor(polyp) + (1 |id),
-            data = subset(polyp2_obj$meta, type == "Mucosal"), family=nbinom1);
-  mucosal_adenoma_models[[colnames(mucosal_adenoma_asv.df)[i]]] <- fit1},
-  error=function(e) e
+  tryCatch({
+    fit1 <-
+      glmmTMB(
+        mucosal_adenoma_asv.df[, i] ~ factor(polyp) + (1 | id),
+        data = subset(polyp2_obj$meta, type == "Mucosal"),
+        family = nbinom1
+      )
 
-  )
+    mucosal_adenoma_models[[colnames(mucosal_adenoma_asv.df)[i]]] <-
+      fit1
+  },
+  error = function(e)
+    e)
 }
 
 asv.models.obj$former <- mucosal_adenoma_models
@@ -1093,15 +1224,21 @@ asv.models.obj$former <- mucosal_adenoma_models
 set.seed(731)
 mucosal_adenoma_models <- NULL
 
-for(i in 1:ncol(mucosal_adenoma_asv.df)){
+for (i in 1:ncol(mucosal_adenoma_asv.df)) {
   fit1 <- NULL
-  tryCatch({fit1 <-
-    glmmTMB(mucosal_adenoma_asv.df[, i] ~ factor(polyp.tissue) + (1 |id),
-            data = subset(polyp2_obj$meta, type == "Mucosal"), family=nbinom1);
-  mucosal_adenoma_models[[colnames(mucosal_adenoma_asv.df)[i]]] <- fit1},
-  error=function(e) e
+  tryCatch({
+    fit1 <-
+      glmmTMB(
+        mucosal_adenoma_asv.df[, i] ~ factor(polyp.tissue) + (1 | id),
+        data = subset(polyp2_obj$meta, type == "Mucosal"),
+        family = nbinom1
+      )
 
-  )
+    mucosal_adenoma_models[[colnames(mucosal_adenoma_asv.df)[i]]] <-
+      fit1
+  },
+  error = function(e)
+    e)
 }
 
 asv.models.obj$polyp.tissue <- mucosal_adenoma_models
@@ -1110,15 +1247,21 @@ asv.models.obj$polyp.tissue <- mucosal_adenoma_models
 set.seed(731)
 mucosal_adenoma_models <- NULL
 
-for(i in 1:ncol(mucosal_adenoma_asv.df)){
+for (i in 1:ncol(mucosal_adenoma_asv.df)) {
   fit1 <- NULL
-  tryCatch({fit1 <-
-    glmmTMB(mucosal_adenoma_asv.df[, i] ~ factor(location) + (1 |id),
-            data = subset(polyp2_obj$meta, type == "Mucosal"), family=nbinom1);
-  mucosal_adenoma_models[[colnames(mucosal_adenoma_asv.df)[i]]] <- fit1},
-  error=function(e) e
+  tryCatch({
+    fit1 <-
+      glmmTMB(
+        mucosal_adenoma_asv.df[, i] ~ factor(location) + (1 | id),
+        data = subset(polyp2_obj$meta, type == "Mucosal"),
+        family = nbinom1
+      )
 
-  )
+    mucosal_adenoma_models[[colnames(mucosal_adenoma_asv.df)[i]]] <-
+      fit1
+  },
+  error = function(e)
+    e)
 }
 
 asv.models.obj$location <- mucosal_adenoma_models
@@ -1171,16 +1314,18 @@ sum(na.omit(qvalue::qvalue(
 set.seed(731)
 fecal_adenoma_models <- NULL
 
-for(i in 1:ncol(fecal_adenoma_genus.df)){
+for (i in 1:ncol(fecal_adenoma_genus.df)) {
   fit1 <- NULL
-  tryCatch({fit1 <-
-    glm.nb(fecal_adenoma_genus.df[, i] ~ Adenoma ,
-            data = subset(polyp2_obj$meta, type == "Fecal")
-           );
-  fecal_adenoma_models[[colnames(fecal_adenoma_genus.df)[i]]] <- fit1},
-  error=function(e) e
+  tryCatch({
+    fit1 <-
+      glm.nb(fecal_adenoma_genus.df[, i] ~ Adenoma ,
+             data = subset(polyp2_obj$meta, type == "Fecal"))
 
-  )
+    fecal_adenoma_models[[colnames(fecal_adenoma_genus.df)[i]]] <-
+      fit1
+  },
+  error = function(e)
+    e)
 }
 
 genus.models.obj$fecal_nadenoma <- fecal_adenoma_models
@@ -1189,16 +1334,18 @@ genus.models.obj$fecal_nadenoma <- fecal_adenoma_models
 set.seed(731)
 fecal_adenoma_models <- NULL
 
-for(i in 1:ncol(fecal_adenoma_genus.df)){
+for (i in 1:ncol(fecal_adenoma_genus.df)) {
   fit1 <- NULL
-  tryCatch({fit1 <-
-    glm.nb(fecal_adenoma_genus.df[, i] ~ factor(polyp) ,
-           data = subset(polyp2_obj$meta, type == "Fecal")
-    );
-  fecal_adenoma_models[[colnames(fecal_adenoma_genus.df)[i]]] <- fit1},
-  error=function(e) e
+  tryCatch({
+    fit1 <-
+      glm.nb(fecal_adenoma_genus.df[, i] ~ factor(polyp) ,
+             data = subset(polyp2_obj$meta, type == "Fecal"))
 
-  )
+    fecal_adenoma_models[[colnames(fecal_adenoma_genus.df)[i]]] <-
+      fit1
+  },
+  error = function(e)
+    e)
 }
 
 genus.models.obj$fecal_former <- fecal_adenoma_models
@@ -1210,16 +1357,18 @@ genus.models.obj$fecal_former <- fecal_adenoma_models
 set.seed(731)
 fecal_adenoma_models <- NULL
 
-for(i in 1:ncol(fecal_adenoma_asv.df)){
+for (i in 1:ncol(fecal_adenoma_asv.df)) {
   fit1 <- NULL
-  tryCatch({fit1 <-
-    glm.nb(fecal_adenoma_asv.df[, i] ~ Adenoma ,
-           data = subset(polyp2_obj$meta, type == "Fecal")
-    );
-  fecal_adenoma_models[[colnames(fecal_adenoma_asv.df)[i]]] <- fit1},
-  error=function(e) e
+  tryCatch({
+    fit1 <-
+      glm.nb(fecal_adenoma_asv.df[, i] ~ Adenoma ,
+             data = subset(polyp2_obj$meta, type == "Fecal"))
 
-  )
+    fecal_adenoma_models[[colnames(fecal_adenoma_asv.df)[i]]] <-
+      fit1
+  },
+  error = function(e)
+    e)
 }
 
 asv.models.obj$fecal_nadenoma <- fecal_adenoma_models
@@ -1229,16 +1378,18 @@ asv.models.obj$fecal_nadenoma <- fecal_adenoma_models
 set.seed(731)
 fecal_adenoma_models <- NULL
 
-for(i in 1:ncol(fecal_adenoma_asv.df)){
+for (i in 1:ncol(fecal_adenoma_asv.df)) {
   fit1 <- NULL
-  tryCatch({fit1 <-
-    glm.nb(fecal_adenoma_asv.df[, i] ~ factor(polyp) ,
-           data = subset(polyp2_obj$meta, type == "Fecal")
-    );
-  fecal_adenoma_models[[colnames(fecal_adenoma_asv.df)[i]]] <- fit1},
-  error=function(e) e
+  tryCatch({
+    fit1 <-
+      glm.nb(fecal_adenoma_asv.df[, i] ~ factor(polyp) ,
+             data = subset(polyp2_obj$meta, type == "Fecal"))
 
-  )
+    fecal_adenoma_models[[colnames(fecal_adenoma_asv.df)[i]]] <-
+      fit1
+  },
+  error = function(e)
+    e)
 }
 
 asv.models.obj$fecal_former <- fecal_adenoma_models
@@ -1251,16 +1402,18 @@ fecal_adenoma_models <- NULL
 set.seed(731)
 oral_adenoma_models <- NULL
 
-for(i in 1:ncol(oral_adenoma_genus.df)){
+for (i in 1:ncol(oral_adenoma_genus.df)) {
   fit1 <- NULL
-  tryCatch({fit1 <-
-    glm.nb(oral_adenoma_genus.df[, i] ~ Adenoma ,
-           data = subset(polyp2_obj$meta, type == "Oral")
-    );
-  oral_adenoma_models[[colnames(oral_adenoma_genus.df)[i]]] <- fit1},
-  error=function(e) e
+  tryCatch({
+    fit1 <-
+      glm.nb(oral_adenoma_genus.df[, i] ~ Adenoma ,
+             data = subset(polyp2_obj$meta, type == "Oral"))
 
-  )
+    oral_adenoma_models[[colnames(oral_adenoma_genus.df)[i]]] <-
+      fit1
+  },
+  error = function(e)
+    e)
 }
 
 genus.models.obj$oral_nadenoma <- oral_adenoma_models
@@ -1269,16 +1422,18 @@ genus.models.obj$oral_nadenoma <- oral_adenoma_models
 set.seed(731)
 oral_adenoma_models <- NULL
 
-for(i in 1:ncol(oral_adenoma_genus.df)){
+for (i in 1:ncol(oral_adenoma_genus.df)) {
   fit1 <- NULL
-  tryCatch({fit1 <-
-    glm.nb(oral_adenoma_genus.df[, i] ~ factor(polyp) ,
-           data = subset(polyp2_obj$meta, type == "Oral")
-    );
-  oral_adenoma_models[[colnames(oral_adenoma_genus.df)[i]]] <- fit1},
-  error=function(e) e
+  tryCatch({
+    fit1 <-
+      glm.nb(oral_adenoma_genus.df[, i] ~ factor(polyp) ,
+             data = subset(polyp2_obj$meta, type == "Oral"))
 
-  )
+    oral_adenoma_models[[colnames(oral_adenoma_genus.df)[i]]] <-
+      fit1
+  },
+  error = function(e)
+    e)
 }
 
 genus.models.obj$oral_former <- oral_adenoma_models
@@ -1326,16 +1481,17 @@ sum(na.omit(qvalue::qvalue(
 set.seed(731)
 oral_adenoma_models <- NULL
 
-for(i in 1:ncol(oral_adenoma_asv.df)){
+for (i in 1:ncol(oral_adenoma_asv.df)) {
   fit1 <- NULL
-  tryCatch({fit1 <-
-    glm.nb(oral_adenoma_asv.df[, i] ~ Adenoma ,
-           data = subset(polyp2_obj$meta, type == "Oral")
-    );
-  oral_adenoma_models[[colnames(oral_adenoma_asv.df)[i]]] <- fit1},
-  error=function(e) e
+  tryCatch({
+    fit1 <-
+      glm.nb(oral_adenoma_asv.df[, i] ~ Adenoma ,
+             data = subset(polyp2_obj$meta, type == "Oral"))
 
-  )
+    oral_adenoma_models[[colnames(oral_adenoma_asv.df)[i]]] <- fit1
+  },
+  error = function(e)
+    e)
 }
 
 asv.models.obj$oral_nadenoma <- oral_adenoma_models
@@ -1345,20 +1501,21 @@ asv.models.obj$oral_nadenoma <- oral_adenoma_models
 set.seed(731)
 oral_adenoma_models <- NULL
 
-for(i in 1:ncol(oral_adenoma_asv.df)){
+for (i in 1:ncol(oral_adenoma_asv.df)) {
   fit1 <- NULL
-  tryCatch({fit1 <-
-    glm.nb(oral_adenoma_asv.df[, i] ~ factor(polyp) ,
-           data = subset(polyp2_obj$meta, type == "Oral")
-    );
-  oral_adenoma_models[[colnames(oral_adenoma_asv.df)[i]]] <- fit1},
-  error=function(e) e
+  tryCatch({
+    fit1 <-
+      glm.nb(oral_adenoma_asv.df[, i] ~ factor(polyp) ,
+             data = subset(polyp2_obj$meta, type == "Oral"))
 
-  )
+    oral_adenoma_models[[colnames(oral_adenoma_asv.df)[i]]] <- fit1
+  },
+  error = function(e)
+    e)
 }
 
 asv.models.obj$oral_former <- oral_adenoma_models
-oral_adenoma_models<- NULL
+oral_adenoma_models <- NULL
 
 #basic stats on fdr control
 sum(na.omit(qvalue::qvalue(
@@ -1401,34 +1558,45 @@ sum(na.omit(qvalue::qvalue(
 
 #Mucosal
 mucosal_former_asv.rf <- randomForest(x = mucosal_adenoma_asv.df,
-                                  y = factor(unlist(subset(polyp2_obj$meta,
-                                                           type == "Mucosal",
-                                                           select = polyp))))
+                                      y = factor(unlist(
+                                        subset(polyp2_obj$meta,
+                                               type == "Mucosal",
+                                               select = polyp)
+                                      )))
 
-mucosal_former_genus.rf <- randomForest(x = mucosal_adenoma_genus.df,
-                                  y = factor(unlist(subset(polyp2_obj$meta,
-                                                           type == "Mucosal",
-                                                           select = polyp))))
+mucosal_former_genus.rf <-
+  randomForest(x = mucosal_adenoma_genus.df,
+               y = factor(unlist(
+                 subset(polyp2_obj$meta,
+                        type == "Mucosal",
+                        select = polyp)
+               )))
 
 #Fecal
 fecal_former_asv.rf <- randomForest(x = fecal_adenoma_asv.df,
-                                    y = factor(unlist(subset(polyp2_obj$meta,
-                                                             type == "Fecal",
-                                                             select = polyp))))
+                                    y = factor(unlist(
+                                      subset(polyp2_obj$meta,
+                                             type == "Fecal",
+                                             select = polyp)
+                                    )))
 
 fecal_former_genus.rf <- randomForest(x = fecal_adenoma_genus.df,
-                                    y = factor(unlist(subset(polyp2_obj$meta,
-                                                             type == "Fecal",
-                                                             select = polyp))))
+                                      y = factor(unlist(
+                                        subset(polyp2_obj$meta,
+                                               type == "Fecal",
+                                               select = polyp)
+                                      )))
 
 #Oral
 oral_former_asv.rf <- randomForest(x = oral_adenoma_asv.df,
-                                    y = factor(unlist(subset(polyp2_obj$meta,
-                                                             type == "Oral",
-                                                             select = polyp))))
+                                   y = factor(unlist(
+                                     subset(polyp2_obj$meta,
+                                            type == "Oral",
+                                            select = polyp)
+                                   )))
 
 oral_former_genus.rf <- randomForest(x = oral_adenoma_genus.df,
-                                    y = factor(unlist(subset(polyp2_obj$meta,
-                                     type == "Oral", select = polyp))))
-
-
+                                     y = factor(unlist(
+                                       subset(polyp2_obj$meta,
+                                              type == "Oral", select = polyp)
+                                     )))
