@@ -1690,6 +1690,8 @@ rf_roc.plot <- ggplot(rf_roc.df,
                           y = sensitivity,
                           color = variable))
 
+pdf("figs/asv_rf_roc.pdf")
+
 rf_roc.plot +
   geom_abline(slope =1, intercept = 1, size = 1, alpha = .4)+
   geom_path(size = 1.5)+
@@ -1708,6 +1710,7 @@ rf_roc.plot +
   scale_color_brewer(palette = "Dark2")+
   ylab("Sensitivity")+
   xlab("Specificity")
+dev.off()
 
 # ANALYSIS: RANDOM FORESTS VISUALS GENUS ROC CURVES ----------------------------
 
@@ -1770,6 +1773,7 @@ genus_rf_roc.plot <- ggplot(genus_rf_roc.df,
                           y = sensitivity,
                           color = variable))
 
+pdf("figs/genus_rf_roc.pdf")
 genus_rf_roc.plot +
   geom_abline(slope =1, intercept = 1, size = 1, alpha = .4)+
   geom_path(size = 1.5)+
@@ -1788,6 +1792,119 @@ genus_rf_roc.plot +
   scale_color_brewer(palette = "Dark2")+
   ylab("Sensitivity")+
   xlab("Specificity")
+dev.off()
 
-# ANALYSIS: RANDOM FORESTS VISUALS MUCOSAL IMPORTANCE PLOT --------------------
+# ANALYSIS: RANDOM FORESTS VISUALS MUCOSAL ASV IMPORTANCE PLOT ----------------
+
+#Now lets look at what might be important to these models
+mucosal_asv_imp.df <- mucosal_former_asv.rf$importance
+mucosal_asv_imp.df <- as.data.frame(mucosal_asv_imp.df)
+
+mucosal_asv_imp.df <-
+  mucosal_asv_imp.df[order(mucosal_asv_imp.df$MeanDecreaseAccuracy,
+                           decreasing = T), ]
+
+mucosal_asv_imp.df <- mucosal_asv_imp.df[1:20, 3, drop = F]
+
+mucosal_asv_imp.df$names <- rownames(mucosal_asv_imp.df)
+mucosal_asv_imp.df$sd <-
+  mucosal_former_asv.rf$importanceSD[mucosal_asv_imp.df$names, 3]
+
+
+
+mucosal_asv_imp.df$mda_scale <-
+  mucosal_asv_imp.df$MeanDecreaseAccuracy /
+  mucosal_asv_imp.df$sd
+
+mucosal_asv_imp.df <-
+  mucosal_asv_imp.df[order(mucosal_asv_imp.df$mda_scale, decreasing = T), ]
+
+mucosal_asv_imp.df$names <- factor(mucosal_asv_imp.df$names,
+                                   levels = rev(mucosal_asv_imp.df$names))
+
+pdf("figs/mucosal_asv_varimp.pdf")
+
+mucosal_asv_imp.plot <- ggplot(mucosal_asv_imp.df, aes(x = names,
+                                                       y = mda_scale))
+
+mucosal_asv_imp.plot +
+  geom_point(size = 4,
+             alpha = .9,
+             color = "#D95F02") +
+  coord_flip() +
+  xlab("") +
+  ylab("Mean Decrease in Accuracy") +
+  ylim(c(0, 45)) +
+  theme(
+    text = element_text(size = 18),
+    panel.border     = element_rect(fill = NA),
+    panel.grid.major = element_line(color = "grey97"),
+    panel.grid.minor = element_blank(),
+    panel.background = element_blank(),
+    axis.line = element_line(colour = "black"),
+    legend.key = element_blank(),
+    axis.text = element_text(color = "black"),
+    legend.title = element_blank(),
+    aspect.ratio = 1
+  )
+dev.off()
+
+
+# ANALYSIS: RANDOM FORESTS VISUALS MUCOSAL GENUS IMPORTANCE PLOT --------------
+
+#Now lets look at what might be important to these models
+mucosal_genus_imp.df <- mucosal_former_genus.rf$importance
+mucosal_genus_imp.df <- as.data.frame(mucosal_genus_imp.df)
+
+mucosal_genus_imp.df <-
+  mucosal_genus_imp.df[order(mucosal_genus_imp.df$MeanDecreaseAccuracy,
+                             decreasing = T), ]
+
+mucosal_genus_imp.df <- mucosal_genus_imp.df[1:20, 3, drop = F]
+
+mucosal_genus_imp.df$names <- rownames(mucosal_genus_imp.df)
+mucosal_genus_imp.df$sd <-
+  mucosal_former_genus.rf$importanceSD[mucosal_genus_imp.df$names, 3]
+
+
+
+mucosal_genus_imp.df$mda_scale <-
+  mucosal_genus_imp.df$MeanDecreaseAccuracy /
+  mucosal_genus_imp.df$sd
+
+mucosal_genus_imp.df <-
+  mucosal_genus_imp.df[order(mucosal_genus_imp.df$mda_scale, decreasing = T), ]
+
+mucosal_genus_imp.df$names <- factor(mucosal_genus_imp.df$names,
+                                     levels = rev(mucosal_genus_imp.df$names))
+
+pdf("figs/mucosal_genus_varimp.pdf")
+
+mucosal_genus_imp.plot <-
+  ggplot(mucosal_genus_imp.df, aes(x = names,
+                                   y = mda_scale))
+
+mucosal_genus_imp.plot +
+  geom_point(size = 4,
+             alpha = .9,
+             color = "#D95F02") +
+  coord_flip() +
+  xlab("") +
+  ylab("Mean Decrease in Accuracy") +
+  ylim(c(0, 60)) +
+  theme(
+    text = element_text(size = 18),
+    panel.border     = element_rect(fill = NA),
+    panel.grid.major = element_line(color = "grey97"),
+    panel.grid.minor = element_blank(),
+    panel.background = element_blank(),
+    axis.line = element_line(colour = "black"),
+    legend.key = element_blank(),
+    axis.text = element_text(color = "black"),
+    legend.title = element_blank(),
+    aspect.ratio = 1
+  )
+dev.off()
+
+
 
