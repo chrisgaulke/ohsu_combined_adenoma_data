@@ -1017,15 +1017,41 @@ for(i in 1:ncol(mucosal_adenoma_genus.df)){
 genus.models.obj$location <- mucosal_adenoma_models
 
 #basic stats on fdr control genus
-sum(na.omit(qvalue::qvalue(sapply(genus.models.obj$nadenoma,
-                                  FUN = function(x){ coefficients(summary(x))$cond[2,4]}))$qvalue < .1 ))
-sum(na.omit(qvalue::qvalue(sapply(genus.models.obj$former,
-                                  FUN = function(x){ coefficients(summary(x))$cond[2,4]}))$qvalue < .1 ))
-sum(na.omit(qvalue::qvalue(sapply(genus.models.obj$polyp.tissue,
-                                  FUN = function(x){ coefficients(summary(x))$cond[2,4]}))$qvalue < .1 ))
-sum(na.omit(qvalue::qvalue(sapply(genus.models.obj$location,
-                                  FUN = function(x){ coefficients(summary(x))$cond[2,4]}))$qvalue < .1 ))
+sum(na.omit(qvalue::qvalue(
+  sapply(
+    genus.models.obj$nadenoma,
+    FUN = function(x) {
+      coefficients(summary(x))$cond[2, 4]
+    }
+  )
+)$qvalue < .1))
 
+sum(na.omit(qvalue::qvalue(
+  sapply(
+    genus.models.obj$former,
+    FUN = function(x) {
+      coefficients(summary(x))$cond[2, 4]
+    }
+  )
+)$qvalue < .1))
+
+sum(na.omit(qvalue::qvalue(
+  sapply(
+    genus.models.obj$polyp.tissue,
+    FUN = function(x) {
+      coefficients(summary(x))$cond[2, 4]
+    }
+  )
+)$qvalue < .1))
+
+sum(na.omit(qvalue::qvalue(
+  sapply(
+    genus.models.obj$location,
+    FUN = function(x) {
+      coefficients(summary(x))$cond[2, 4]
+    }
+  )
+)$qvalue < .1))
 
 # ANALYSIS: TAXA MODELS MUCOSAL ASV ---------------------------------------
 
@@ -1098,14 +1124,41 @@ for(i in 1:ncol(mucosal_adenoma_asv.df)){
 asv.models.obj$location <- mucosal_adenoma_models
 
 #basic stats on fdr control ASV
-sum(na.omit(qvalue::qvalue(sapply(asv.models.obj$nadenoma,
-                                  FUN = function(x){ coefficients(summary(x))$cond[2,4]}))$qvalue < .1 ))
-sum(na.omit(qvalue::qvalue(sapply(asv.models.obj$former,
-                                  FUN = function(x){ coefficients(summary(x))$cond[2,4]}))$qvalue < .1 ))
-sum(na.omit(qvalue::qvalue(sapply(asv.models.obj$polyp.tissue,
-                                  FUN = function(x){ coefficients(summary(x))$cond[2,4]}))$qvalue < .1 ))
-sum(na.omit(qvalue::qvalue(sapply(asv.models.obj$location,
-                                  FUN = function(x){ coefficients(summary(x))$cond[2,4]}))$qvalue < .1 ))
+sum(na.omit(qvalue::qvalue(
+  sapply(
+    asv.models.obj$nadenoma,
+    FUN = function(x) {
+      coefficients(summary(x))$cond[2, 4]
+    }
+  )
+)$qvalue < .1))
+
+sum(na.omit(qvalue::qvalue(
+  sapply(
+    asv.models.obj$former,
+    FUN = function(x) {
+      coefficients(summary(x))$cond[2, 4]
+    }
+  )
+)$qvalue < .1))
+
+sum(na.omit(qvalue::qvalue(
+  sapply(
+    asv.models.obj$polyp.tissue,
+    FUN = function(x) {
+      coefficients(summary(x))$cond[2, 4]
+    }
+  )
+)$qvalue < .1))
+
+sum(na.omit(qvalue::qvalue(
+  sapply(
+    asv.models.obj$location,
+    FUN = function(x) {
+      coefficients(summary(x))$cond[2, 4]
+    }
+  )
+)$qvalue < .1))
 
 # ANALYSIS: TAXA MODELS FECAL GENUS -------------------------------------
 
@@ -1231,15 +1284,41 @@ for(i in 1:ncol(oral_adenoma_genus.df)){
 genus.models.obj$oral_former <- oral_adenoma_models
 
 #basic stats on fdr control genus
-sum(na.omit(qvalue::qvalue(sapply(genus.models.obj$fecal_nadenoma,
-                                  FUN = function(x){ coefficients(summary(x))[2,4]}))$qvalue < .1 ))
-sum(na.omit(qvalue::qvalue(sapply(genus.models.obj$fecal_former,
-                                  FUN = function(x){ coefficients(summary(x))[2,4]}))$qvalue < .1 ))
-sum(na.omit(qvalue::qvalue(sapply(genus.models.obj$oral_nadenoma,
-                                  FUN = function(x){ coefficients(summary(x))[2,4]}))$qvalue < .1 ))
-sum(na.omit(qvalue::qvalue(sapply(genus.models.obj$oral_former,
-                                  FUN = function(x){ coefficients(summary(x))[2,4]}))$qvalue < .1 ))
+sum(na.omit(qvalue::qvalue(
+  sapply(
+    genus.models.obj$fecal_nadenoma,
+    FUN = function(x) {
+      coefficients(summary(x))[2, 4]
+    }
+  )
+)$qvalue < .1))
 
+sum(na.omit(qvalue::qvalue(
+  sapply(
+    genus.models.obj$fecal_former,
+    FUN = function(x) {
+      coefficients(summary(x))[2, 4]
+    }
+  )
+)$qvalue < .1))
+
+sum(na.omit(qvalue::qvalue(
+  sapply(
+    genus.models.obj$oral_nadenoma,
+    FUN = function(x) {
+      coefficients(summary(x))[2, 4]
+    }
+  )
+)$qvalue < .1))
+
+sum(na.omit(qvalue::qvalue(
+  sapply(
+    genus.models.obj$oral_former,
+    FUN = function(x) {
+      coefficients(summary(x))[2, 4]
+    }
+  )
+)$qvalue < .1))
 # ANALYSIS: TAXA MODELS ORAL ASV ----------------------------------------
 
 #oral #adenoma
