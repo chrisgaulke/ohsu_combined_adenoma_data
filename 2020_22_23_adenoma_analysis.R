@@ -2164,12 +2164,36 @@ mucosal_asv_imp.df$mda_scale <-
 mucosal_asv_imp.df <-
   mucosal_asv_imp.df[order(mucosal_asv_imp.df$mda_scale, decreasing = T), ]
 
-mucosal_asv_imp.df$names <- factor(mucosal_asv_imp.df$names,
-                                   levels = rev(mucosal_asv_imp.df$names))
+#mucosal_asv_imp.df$names <- factor(mucosal_asv_imp.df$names,
+#                                   levels = rev(mucosal_asv_imp.df$names))
+
+
+
+tax.vec <- NULL
+for(i in 1:length(mucosal_asv_imp.df$names)){
+  t <- NULL
+  xdf <- polyp2_tax.df[(mucosal_asv_imp.df$names)[i],6:8]
+  if(is.na(xdf["Species"])){
+    if(is.na(xdf["Genus"])){
+      t <-  paste0(xdf["Family"], "(F)")
+    }else{
+      t <- paste0(xdf["Genus"], "(G)")
+    }
+  }else{
+    t <- paste0(xdf["Genus"]," ", xdf["Species"], "(S)")
+  }
+  t <- paste0(t, "-", (mucosal_asv_imp.df$names)[i])
+  tax.vec <- c(tax.vec, t)
+}
+
+mucosal_asv_imp.df$tax.name <- tax.vec
+mucosal_asv_imp.df$tax.name <- factor(mucosal_asv_imp.df$tax.name,
+                                      levels= rev(mucosal_asv_imp.df$tax.name ))
+
 
 pdf("figs/mucosal_asv_varimp.pdf")
 
-mucosal_asv_imp.plot <- ggplot(mucosal_asv_imp.df, aes(x = names,
+mucosal_asv_imp.plot <- ggplot(mucosal_asv_imp.df, aes(x = tax.name,
                                                        y = mda_scale))
 
 mucosal_asv_imp.plot +
