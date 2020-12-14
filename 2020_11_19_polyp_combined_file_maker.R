@@ -391,7 +391,7 @@ abline(v = 1000, col = "red")
 abline(v = 2500, col = "red")
 abline(v = 5000, col = "yellow")
 abline(v = 7500, col = "yellow")
-abline(v = 10000, col = "green")
+abline(v = 10000, col = "black")
 
 # so it looks like a read depth of 10,000 sequences is about appropriate for our
 # data. Lower depths such as 7,500 and 5,000 might also be acceptable, however,
@@ -444,7 +444,7 @@ abline(v = 1000, col = "red")
 abline(v = 2500, col = "red")
 abline(v = 5000, col = "yellow")
 abline(v = 7500, col = "yellow")
-abline(v = 10000, col = "green")
+abline(v = 10000, col = "black")
 dev.off()
 
 #now move on to normalization and filter
