@@ -1051,7 +1051,7 @@ for (i in 1:ncol(mucosal_adenoma_genus.df)) {
       glmmTMB(
         mucosal_adenoma_genus.df[, i] ~ Adenoma + (1 | id),
         data = subset(polyp2_obj$meta, type == "Mucosal"),
-        family = nbinom1
+        family = gaussian
       )
 
     mucosal_adenoma_models[[colnames(mucosal_adenoma_genus.df)[i]]] <-
@@ -1074,7 +1074,7 @@ for (i in 1:ncol(mucosal_adenoma_genus.df)) {
       glmmTMB(
         mucosal_adenoma_genus.df[, i] ~ factor(polyp) + (1 | id),
         data = subset(polyp2_obj$meta, type == "Mucosal"),
-        family = nbinom1
+        family = gaussian
       )
 
 
@@ -1098,7 +1098,7 @@ for (i in 1:ncol(mucosal_adenoma_genus.df)) {
       glmmTMB(
         mucosal_adenoma_genus.df[, i] ~ factor(polyp.tissue) + (1 | id),
         data = subset(polyp2_obj$meta, type == "Mucosal"),
-        family = nbinom1
+        family = gaussian
       )
 
 
@@ -1122,7 +1122,7 @@ for (i in 1:ncol(mucosal_adenoma_genus.df)) {
       glmmTMB(
         mucosal_adenoma_genus.df[, i] ~ factor(location) + (1 | id),
         data = subset(polyp2_obj$meta, type == "Mucosal"),
-        family = nbinom1
+        family = gaussian
       )
 
 
@@ -1185,7 +1185,7 @@ for (i in 1:ncol(mucosal_adenoma_asv.df)) {
       glmmTMB(
         mucosal_adenoma_asv.df[, i] ~ Adenoma + (1 | id),
         data = subset(polyp2_obj$meta, type == "Mucosal"),
-        family = nbinom1
+        family = gaussian
       )
 
     mucosal_adenoma_models[[colnames(mucosal_adenoma_asv.df)[i]]] <-
@@ -1208,7 +1208,7 @@ for (i in 1:ncol(mucosal_adenoma_asv.df)) {
       glmmTMB(
         mucosal_adenoma_asv.df[, i] ~ factor(polyp) + (1 | id),
         data = subset(polyp2_obj$meta, type == "Mucosal"),
-        family = nbinom1
+        family = gaussian
       )
 
     mucosal_adenoma_models[[colnames(mucosal_adenoma_asv.df)[i]]] <-
@@ -1231,7 +1231,7 @@ for (i in 1:ncol(mucosal_adenoma_asv.df)) {
       glmmTMB(
         mucosal_adenoma_asv.df[, i] ~ factor(polyp.tissue) + (1 | id),
         data = subset(polyp2_obj$meta, type == "Mucosal"),
-        family = nbinom1
+        family = gaussian
       )
 
     mucosal_adenoma_models[[colnames(mucosal_adenoma_asv.df)[i]]] <-
@@ -1254,7 +1254,7 @@ for (i in 1:ncol(mucosal_adenoma_asv.df)) {
       glmmTMB(
         mucosal_adenoma_asv.df[, i] ~ factor(location) + (1 | id),
         data = subset(polyp2_obj$meta, type == "Mucosal"),
-        family = nbinom1
+        family = gaussian
       )
 
     mucosal_adenoma_models[[colnames(mucosal_adenoma_asv.df)[i]]] <-
@@ -1318,7 +1318,7 @@ for (i in 1:ncol(fecal_adenoma_genus.df)) {
   fit1 <- NULL
   tryCatch({
     fit1 <-
-      glm.nb(fecal_adenoma_genus.df[, i] ~ Adenoma ,
+      glm(fecal_adenoma_genus.df[, i] ~ Adenoma ,
              data = subset(polyp2_obj$meta, type == "Fecal"))
 
     fecal_adenoma_models[[colnames(fecal_adenoma_genus.df)[i]]] <-
@@ -1338,7 +1338,7 @@ for (i in 1:ncol(fecal_adenoma_genus.df)) {
   fit1 <- NULL
   tryCatch({
     fit1 <-
-      glm.nb(fecal_adenoma_genus.df[, i] ~ factor(polyp) ,
+      glm(fecal_adenoma_genus.df[, i] ~ factor(polyp) ,
              data = subset(polyp2_obj$meta, type == "Fecal"))
 
     fecal_adenoma_models[[colnames(fecal_adenoma_genus.df)[i]]] <-
@@ -1361,7 +1361,7 @@ for (i in 1:ncol(fecal_adenoma_asv.df)) {
   fit1 <- NULL
   tryCatch({
     fit1 <-
-      glm.nb(fecal_adenoma_asv.df[, i] ~ Adenoma ,
+      glm(fecal_adenoma_asv.df[, i] ~ Adenoma ,
              data = subset(polyp2_obj$meta, type == "Fecal"))
 
     fecal_adenoma_models[[colnames(fecal_adenoma_asv.df)[i]]] <-
@@ -1382,7 +1382,7 @@ for (i in 1:ncol(fecal_adenoma_asv.df)) {
   fit1 <- NULL
   tryCatch({
     fit1 <-
-      glm.nb(fecal_adenoma_asv.df[, i] ~ factor(polyp) ,
+      glm(fecal_adenoma_asv.df[, i] ~ factor(polyp) ,
              data = subset(polyp2_obj$meta, type == "Fecal"))
 
     fecal_adenoma_models[[colnames(fecal_adenoma_asv.df)[i]]] <-
@@ -1406,7 +1406,7 @@ for (i in 1:ncol(oral_adenoma_genus.df)) {
   fit1 <- NULL
   tryCatch({
     fit1 <-
-      glm.nb(oral_adenoma_genus.df[, i] ~ Adenoma ,
+      glm(oral_adenoma_genus.df[, i] ~ Adenoma ,
              data = subset(polyp2_obj$meta, type == "Oral"))
 
     oral_adenoma_models[[colnames(oral_adenoma_genus.df)[i]]] <-
@@ -1426,7 +1426,7 @@ for (i in 1:ncol(oral_adenoma_genus.df)) {
   fit1 <- NULL
   tryCatch({
     fit1 <-
-      glm.nb(oral_adenoma_genus.df[, i] ~ factor(polyp) ,
+      glm(oral_adenoma_genus.df[, i] ~ factor(polyp) ,
              data = subset(polyp2_obj$meta, type == "Oral"))
 
     oral_adenoma_models[[colnames(oral_adenoma_genus.df)[i]]] <-
@@ -1485,7 +1485,7 @@ for (i in 1:ncol(oral_adenoma_asv.df)) {
   fit1 <- NULL
   tryCatch({
     fit1 <-
-      glm.nb(oral_adenoma_asv.df[, i] ~ Adenoma ,
+      glm(oral_adenoma_asv.df[, i] ~ Adenoma ,
              data = subset(polyp2_obj$meta, type == "Oral"))
 
     oral_adenoma_models[[colnames(oral_adenoma_asv.df)[i]]] <- fit1
@@ -1505,7 +1505,7 @@ for (i in 1:ncol(oral_adenoma_asv.df)) {
   fit1 <- NULL
   tryCatch({
     fit1 <-
-      glm.nb(oral_adenoma_asv.df[, i] ~ factor(polyp) ,
+      glm(oral_adenoma_asv.df[, i] ~ factor(polyp) ,
              data = subset(polyp2_obj$meta, type == "Oral"))
 
     oral_adenoma_models[[colnames(oral_adenoma_asv.df)[i]]] <- fit1
@@ -1554,12 +1554,357 @@ sum(na.omit(qvalue::qvalue(
   )
 )$qvalue < .1))
 
-# ANALYSIS: TAXA VISUALIZATIONS -------------------------------------------
+# ANALYSIS: GENUS MODEL AGGREGATION -------------------------------------
 
+model_summary_genus.df <-
+  as.data.frame(matrix(
+    nrow =
+      sum(sapply(genus.models.obj, FUN = function(x){length(x)})),
+    ncol = 7 ))
+
+colnames(model_summary_genus.df) <- c("taxa",
+                                      "tissue",
+                                      "test",
+                                      "est",
+                                      "stat_t_or_z",
+                                      "pval",
+                                      "qval")
+
+counter <- 1
+for(i in names(genus.models.obj)[1:3]){
+  t1 <- counter
+  for( j in 1:length(genus.models.obj[[i]])){
+    fit <- summary(genus.models.obj[[i]][[j]])
+
+    model_summary_genus.df[counter, 1 ] <- names(genus.models.obj[[i]])[j]
+    model_summary_genus.df[counter, 2 ] <- "Mucosal"
+    model_summary_genus.df[counter, 3 ] <- i
+    model_summary_genus.df[counter, 4 ] <- fit$coefficients$cond[2, 1]
+    model_summary_genus.df[counter, 5 ] <- fit$coefficients$cond[2, 3]
+    model_summary_genus.df[counter, 6 ] <- fit$coefficients$cond[2, 4]
+    #move to populate the next row
+    counter <- counter + 1
+  }
+  t2 <- counter - 1
+  #add qvalue
+  model_summary_genus.df[t1:t2,7] <-
+    p.adjust(model_summary_genus.df[t1:t2,6], method = "fdr")
+    #qvalue(model_summary_genus.df[t1:t2,6])$qvalue
+
+}
+
+#mucosal location
+#this is a little messy because we are really interested in the overall
+#impact of location on the taxa abundance. to determine this effect we
+#will use an anova and not report the estimates or tvals bc these will
+#no be generated with chisq
+
+t1 <- counter
+for( j in 1:length(genus.models.obj[[4]])){
+    fit <- car::Anova(genus.models.obj[[4]][[j]])
+
+    model_summary_genus.df[counter, 1 ] <- names(genus.models.obj[[4]])[j]
+    model_summary_genus.df[counter, 2 ] <- "Mucosal"
+    model_summary_genus.df[counter, 3 ] <- "Location"
+    model_summary_genus.df[counter, 4 ] <- NA
+    model_summary_genus.df[counter, 5 ] <- NA
+    model_summary_genus.df[counter, 6 ] <- fit$`Pr(>Chisq)`
+    #move to populate the next row
+    counter <- counter + 1
+}
+
+t2 <- counter - 1
+#add qvalue
+model_summary_genus.df[t1:t2,7] <-
+  p.adjust(model_summary_genus.df[t1:t2,6], method = "fdr")
+  #qvalue(model_summary_genus.df[t1:t2,6])$qvalue
+
+t1 <- NULL
+t2 <- NULL
+
+#now on to fecal and oral which are different because they use glm.nb
+#fecal
+for(i in names(genus.models.obj)[5:6]){
+  t1 <- counter
+  for( j in 1:length(genus.models.obj[[i]])){
+    fit <- summary(genus.models.obj[[i]][[j]])
+
+    model_summary_genus.df[counter, 1 ] <- names(genus.models.obj[[i]])[j]
+    model_summary_genus.df[counter, 2 ] <- "Fecal"
+    model_summary_genus.df[counter, 3 ] <- i
+    model_summary_genus.df[counter, 4 ] <- coefficients(fit)[2, 1]
+    model_summary_genus.df[counter, 5 ] <- coefficients(fit)[2, 3]
+    model_summary_genus.df[counter, 6 ] <- coefficients(fit)[2, 4]
+    #move to populate the next row
+    counter <- counter + 1
+  }
+  t2 <- counter - 1
+  #add qvalue
+  model_summary_genus.df[t1:t2,7] <-
+    p.adjust(model_summary_genus.df[t1:t2,6], method = "fdr")
+    #qvalue(model_summary_genus.df[t1:t2,6])$qvalue
+
+}
+
+
+for(i in names(genus.models.obj)[7:8]){
+  t1 <- counter
+  for( j in 1:length(genus.models.obj[[i]])){
+    fit <- summary(genus.models.obj[[i]][[j]])
+
+    model_summary_genus.df[counter, 1 ] <- names(genus.models.obj[[i]])[j]
+    model_summary_genus.df[counter, 2 ] <- "Oral"
+    model_summary_genus.df[counter, 3 ] <- i
+    model_summary_genus.df[counter, 4 ] <- coefficients(fit)[2, 1]
+    model_summary_genus.df[counter, 5 ] <- coefficients(fit)[2, 3]
+    model_summary_genus.df[counter, 6 ] <- coefficients(fit)[2, 4]
+    #move to populate the next row
+    counter <- counter + 1
+  }
+  t2 <- counter - 1
+  #add qvalue
+  model_summary_genus.df[t1:t2,7] <-
+    p.adjust(model_summary_genus.df[t1:t2,6], method = "fdr")
+   # qvalue(model_summary_genus.df[t1:t2,6])$qvalue
+}
+
+#reorder
+model_summary_genus.df <-
+  model_summary_genus.df[order(model_summary_genus.df$test,
+                               model_summary_genus.df$qval),]
+
+
+# ANALYSIS: TAXA VISUALIZATIONS GENUS -------------------------------------
+
+nadenoma_test_all.df <- subset(model_summary_genus.df,
+                               test %in% c("nadenoma",
+                                           "fecal_nadenoma",
+                                           "oral_nadenoma"
+                                           )
+                               )
+
+keeps.taxa <-
+  unlist(unique(subset(nadenoma_test_all.df, qval < 0.1, select = taxa)))
+
+nadenoma_test_all.df <-
+  nadenoma_test_all.df[which(nadenoma_test_all.df$taxa %in% keeps.taxa),]
+
+
+nadenoma_test_all.plot <- ggplot(nadenoma_test_all.df,
+                                 aes(x = tissue,
+                                     y = taxa,
+                                     fill = est))
+nadenoma_test_all.plot +
+  geom_tile()+
+  #coord_flip()+
+  scale_fill_distiller(palette = "PRGn", limits= c(-20,20), oob=squish )+
+  theme(text = element_text(size=18, colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.line = element_line(colour = "black"),
+        axis.text = element_text(colour = "black"),
+        legend.key = element_blank(),
+        legend.title = element_blank(),
+        legend.position = "right"
+  )+
+  xlab("")+
+  ylab("")
+
+# ANALYSIS: ASV MODEL AGGREGATION -------------------------------------
+
+model_summary_asv.df <-
+  as.data.frame(matrix(
+    nrow =
+      sum(sapply(asv.models.obj, FUN = function(x){length(x)})),
+    ncol = 7 ))
+
+colnames(model_summary_asv.df) <- c("taxa",
+                                    "tissue",
+                                    "test",
+                                    "est",
+                                    "stat_t_or_z",
+                                    "pval",
+                                    "qval")
+
+counter <- 1
+for(i in names(asv.models.obj)[1:3]){
+  t1 <- counter
+  for( j in 1:length(asv.models.obj[[i]])){
+    fit <- summary(asv.models.obj[[i]][[j]])
+
+    model_summary_asv.df[counter, 1 ] <- names(asv.models.obj[[i]])[j]
+    model_summary_asv.df[counter, 2 ] <- "Mucosal"
+    model_summary_asv.df[counter, 3 ] <- i
+    model_summary_asv.df[counter, 4 ] <- fit$coefficients$cond[2, 1]
+    model_summary_asv.df[counter, 5 ] <- fit$coefficients$cond[2, 3]
+    model_summary_asv.df[counter, 6 ] <- fit$coefficients$cond[2, 4]
+    #move to populate the next row
+    counter <- counter + 1
+  }
+  t2 <- counter - 1
+  #add qvalue
+  model_summary_asv.df[t1:t2,7] <-
+    p.adjust(model_summary_asv.df[t1:t2,6], method = "fdr")
+  #qvalue(model_summary_asv.df[t1:t2,6])$qvalue
+
+}
+
+#mucosal location
+#this is a little messy because we are really interested in the overall
+#impact of location on the taxa abundance. to determine this effect we
+#will use an anova and not report the estimates or tvals bc these will
+#no be generated with chisq
+
+t1 <- counter
+for( j in 1:length(asv.models.obj[[4]])){
+  fit <- car::Anova(asv.models.obj[[4]][[j]])
+
+  model_summary_asv.df[counter, 1 ] <- names(asv.models.obj[[4]])[j]
+  model_summary_asv.df[counter, 2 ] <- "Mucosal"
+  model_summary_asv.df[counter, 3 ] <- "Location"
+  model_summary_asv.df[counter, 4 ] <- NA
+  model_summary_asv.df[counter, 5 ] <- NA
+  model_summary_asv.df[counter, 6 ] <- fit$`Pr(>Chisq)`
+  #move to populate the next row
+  counter <- counter + 1
+}
+
+t2 <- counter - 1
+#add qvalue
+model_summary_asv.df[t1:t2,7] <-
+  p.adjust(model_summary_asv.df[t1:t2,6], method = "fdr")
+#qvalue(model_summary_asv.df[t1:t2,6])$qvalue
+
+t1 <- NULL
+t2 <- NULL
+
+#now on to fecal and oral which are different because they use glm.nb
+#fecal
+for(i in names(asv.models.obj)[5:6]){
+  t1 <- counter
+  for( j in 1:length(asv.models.obj[[i]])){
+    fit <- summary(asv.models.obj[[i]][[j]])
+
+    model_summary_asv.df[counter, 1 ] <- names(asv.models.obj[[i]])[j]
+    model_summary_asv.df[counter, 2 ] <- "Fecal"
+    model_summary_asv.df[counter, 3 ] <- i
+    model_summary_asv.df[counter, 4 ] <- coefficients(fit)[2, 1]
+    model_summary_asv.df[counter, 5 ] <- coefficients(fit)[2, 3]
+    model_summary_asv.df[counter, 6 ] <- coefficients(fit)[2, 4]
+    #move to populate the next row
+    counter <- counter + 1
+  }
+  t2 <- counter - 1
+  #add qvalue
+  model_summary_asv.df[t1:t2,7] <-
+    p.adjust(model_summary_asv.df[t1:t2,6], method = "fdr")
+  #qvalue(model_summary_asv.df[t1:t2,6])$qvalue
+
+}
+
+
+for(i in names(asv.models.obj)[7:8]){
+  t1 <- counter
+  for( j in 1:length(asv.models.obj[[i]])){
+    fit <- summary(asv.models.obj[[i]][[j]])
+
+    model_summary_asv.df[counter, 1 ] <- names(asv.models.obj[[i]])[j]
+    model_summary_asv.df[counter, 2 ] <- "Oral"
+    model_summary_asv.df[counter, 3 ] <- i
+    model_summary_asv.df[counter, 4 ] <- coefficients(fit)[2, 1]
+    model_summary_asv.df[counter, 5 ] <- coefficients(fit)[2, 3]
+    model_summary_asv.df[counter, 6 ] <- coefficients(fit)[2, 4]
+    #move to populate the next row
+    counter <- counter + 1
+  }
+  t2 <- counter - 1
+  #add qvalue
+  model_summary_asv.df[t1:t2,7] <-
+    p.adjust(model_summary_asv.df[t1:t2,6], method = "fdr")
+  # qvalue(model_summary_asv.df[t1:t2,6])$qvalue
+}
+
+#reorder
+model_summary_asv.df <-
+  model_summary_asv.df[order(model_summary_asv.df$test,
+                             model_summary_asv.df$qval),]
+
+
+# ANALYSIS: TAXA VISUALIZATIONS ASV -------------------------------------
+
+asv_nadenoma_test_all.df <- subset(model_summary_asv.df,
+                                   test %in% c("nadenoma",
+                                               "fecal_nadenoma",
+                                               "oral_nadenoma"
+                                   )
+)
+
+keeps.taxa <-
+  unlist(unique(subset(asv_nadenoma_test_all.df, qval < 0.1, select = taxa)))
+
+asv_nadenoma_test_all.df <-
+  asv_nadenoma_test_all.df[which(asv_nadenoma_test_all.df $taxa %in% keeps.taxa),]
+
+t.vec <- NULL
+for(i in 1:length(asv_nadenoma_test_all.df$taxa)){
+  t <- NULL
+  xdf <- polyp2_tax.df[(asv_nadenoma_test_all.df$taxa)[i],6:8]
+  if(is.na(xdf["Species"])){
+    if(is.na(xdf["Genus"])){
+      t <-  paste0(xdf["Family"], "(F)")
+    }else{
+      t <- paste0(xdf["Genus"], "(G)")
+    }
+  }else{
+    t <- paste0(xdf["Genus"]," ", xdf["Species"], "(S)")
+  }
+  t <- paste0(t, "-", (asv_nadenoma_test_all.df$taxa)[i])
+  t.vec <- c(t.vec, t)
+}
+
+asv_nadenoma_test_all.df$tax.name <- t.vec
+asv_nadenoma_test_all.df$sig <-
+  sapply(asv_nadenoma_test_all.df$qval,
+         FUN = function(x){if(x < 0.1 ){print("*")}else{print("")}}
+         )
+
+pdf("figs/asv_models_sig.pdf")
+asv_nadenoma_test_all.plot <- ggplot(asv_nadenoma_test_all.df,
+                                     aes(x = tissue,
+                                         y = tax.name,
+                                         fill = est))
+asv_nadenoma_test_all.plot +
+  geom_tile()+
+  geom_text(aes(label = sig),nudge_y = -.1,
+            size =6,
+            color = "grey65")+
+  #coord_flip()+
+  scale_fill_distiller(palette = "PRGn",
+                       limits= c(-10,20),
+                       oob=squish )+
+  theme(text = element_text(size=18, colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        panel.border     = element_rect(fill = NA),
+        axis.line = element_line(colour = "black"),
+        axis.text = element_text(colour = "black"),
+        legend.key = element_blank(),
+        legend.title = element_blank(),
+        legend.position = "top"
+  )+
+  xlab("")+
+  ylab("")+
+  scale_x_discrete(expand = c(0,0))+
+  scale_y_discrete(expand = c(0,0))
+dev.off()
 
 # ANALYSIS: RANDOM FORESTS ------------------------------------------------
 
 #Mucosal
+
+set.seed(731)
 mucosal_former_asv.rf <- randomForest(x = mucosal_adenoma_asv.df,
                                       y = factor(unlist(
                                         subset(polyp2_obj$meta,
@@ -1907,4 +2252,96 @@ mucosal_genus_imp.plot +
 dev.off()
 
 
+# ANALYSIS: RANDOM FOREST WITH LEAVE ONE OUT ASV  -----------------------------
 
+# Although over fitting is less of a problem with random forest I will still
+# attempt some cross validation here. I will try using a 90% test 10% validate
+# split for all samples
+set.seed(731)
+
+error.vec <- NULL
+for (i in 1:1000) {
+  model <-
+    sample(row.names(mucosal_adenoma_asv.df),
+           size = round(nrow(mucosal_adenoma_asv.df) * .9))
+  cs <-
+    row.names(mucosal_adenoma_asv.df)[-which(row.names(mucosal_adenoma_asv.df) %in% model)]
+
+
+  #make the train set
+  mucosal_asv_model.rf <-
+    mucosal_adenoma_asv.df[which(rownames(mucosal_adenoma_asv.df) %in% model), ]
+
+  mucosal_asv_meta_model.rf <-
+    polyp2_obj$meta[which(rownames(polyp2_obj$meta) %in% model), ]
+
+  #make the test set
+  mucosal_asv_cv.rf <-
+    mucosal_adenoma_asv.df[which(rownames(mucosal_adenoma_asv.df) %in% cs), ]
+
+  mucosal_asv_meta_cv.rf <-
+    polyp2_obj$meta[which(rownames(polyp2_obj$meta) %in% cs), ]
+
+  x <- randomForest(x = mucosal_asv_model.rf,
+                    y = factor(mucosal_asv_meta_model.rf$polyp))
+
+  y <- predict(x, newdata = mucosal_asv_cv.rf)
+
+  z <-
+    1 - (sum(y == factor(mucosal_asv_meta_cv.rf$polyp)) / length(y))
+  error.vec <- c(error.vec, z)
+}
+
+mean(error.vec)
+
+ggplot(data = as.data.frame(error.vec), aes(x = error.vec))+
+  geom_histogram(binwidth = .05, color = "white")
+
+# ANALYSIS: RANDOM FOREST WITH LEAVE ONE OUT GENUS ---------------------------
+
+# Although over fitting is less of a problem with random forest I will still
+# attempt some cross validation here. I will try using a 90% test 10% validate
+# split for all samples
+set.seed(731)
+
+gerror.vec <- NULL
+for (i in 1:1000) {
+  model <-
+    sample(row.names(mucosal_adenoma_genus.df),
+           size = round(nrow(mucosal_adenoma_genus.df) * .9))
+  cs <-
+    row.names(mucosal_adenoma_genus.df)[-which(row.names(mucosal_adenoma_genus.df) %in% model)]
+
+
+  #make the train set
+  mucosal_genus_model.rf <-
+    mucosal_adenoma_genus.df[which(rownames(mucosal_adenoma_genus.df) %in% model), ]
+
+  mucosal_genus_meta_model.rf <-
+    polyp2_obj$meta[which(rownames(polyp2_obj$meta) %in% model), ]
+
+  #make the test set
+  mucosal_genus_cv.rf <-
+    mucosal_adenoma_genus.df[which(rownames(mucosal_adenoma_genus.df) %in% cs), ]
+
+  mucosal_genus_meta_cv.rf <-
+    polyp2_obj$meta[which(rownames(polyp2_obj$meta) %in% cs), ]
+
+  x <- randomForest(x = mucosal_genus_model.rf,
+                    y = factor(mucosal_genus_meta_model.rf$polyp))
+
+  y <- predict(x, newdata = mucosal_genus_cv.rf)
+
+  z <-
+    1 - (sum(y == factor(mucosal_genus_meta_cv.rf$polyp)) / length(y))
+  gerror.vec <- c(gerror.vec, z)
+}
+
+mean(gerror.vec)
+
+ggplot(data = as.data.frame(gerror.vec), aes(x = gerror.vec))+
+  geom_histogram(binwidth = .05, color = "white")
+
+
+
+# SANDBOX -----------------------------------------------------------------
