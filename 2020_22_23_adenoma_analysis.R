@@ -518,6 +518,64 @@ adenoma_shannon.point +
 
 dev.off()
 
+# Since our models wont tell us if fecal shannon is lower in formers vs
+# non-formers we will need to conduct another test. We aren't interested
+# in whether the tissues vary in shannon overall because that has been
+# shown elsewhere. We will use shannon tests to determine if there are
+# tissue specific difference in richness between formers and non formers.
+
+#Fecal
+
+wilcox.test(unlist(na.omit(
+  subset(
+    polyp2_obj$shannon.df,
+    subset = tissue == "Fecal" &
+      former == 0,
+    select = shannon
+  )
+)), unlist(na.omit(
+  subset(
+    polyp2_obj$shannon.df,
+    subset = tissue == "Fecal" & former == 1,
+    select = shannon
+  )
+))) #sig p = 0.02458 W = 1357
+
+# Oral
+
+wilcox.test(unlist(na.omit(
+  subset(
+    polyp2_obj$shannon.df,
+    subset = tissue == "Oral" &
+      former == 0,
+    select = shannon
+  )
+)), unlist(na.omit(
+  subset(
+    polyp2_obj$shannon.df,
+    subset = tissue == "Oral" & former == 1,
+    select = shannon
+  )
+))) # not sig p = 0.8875
+
+# Mucosal
+
+wilcox.test(unlist(na.omit(
+  subset(
+    polyp2_obj$shannon.df,
+    subset = tissue == "Mucosal" &
+      former == 0,
+    select = shannon
+  )
+)), unlist(na.omit(
+  subset(
+    polyp2_obj$shannon.df,
+    subset = tissue == "Mucosal" & former == 1,
+    select = shannon
+  )
+))) #not sig p = 0.8653
+
+
 
 # ANALYSIS: RICHNESS  -----------------------------------------------------
 
@@ -607,6 +665,11 @@ lmerich_fit1 <- glmmTMB(richness ~ npolyp * factor(tissue) +
                           (1 | id) ,
                         na.omit(polyp2_obj$richness))
 
+
+lmerich_fit1 <- glmmTMB(richness ~ former * factor(tissue) +
+                          (1 | id ) ,
+                        na.omit(polyp2_obj$richness))
+
 summary(lmerich_fit1)#sig
 
 #mucosal former effects
@@ -614,6 +677,8 @@ lmerich_fit2 <- glmmTMB(richness ~
                           npolyp + (1 | id),
                         na.omit(subset(polyp2_obj$richness, subset = tissue ==
                                          "Mucosal")))
+
+
 summary(lmerich_fit2)#no sig
 
 #mucosal adenomas with location effects
@@ -677,6 +742,63 @@ adenoma_richness.point +
   scale_fill_brewer("Tissue", palette = "Dark2")
 
 dev.off()
+
+# Since our models wont tell us if fecal richness is lower in formers vs
+# non-formers we will need to conduct another test. We aren't interested
+# in whether the tissues vary in richness overall because that has been
+# shown elsewhere. We will use wilcoxon tests to determine if there are
+# tissue specific difference in richness between formers and non formers.
+
+#Fecal
+
+wilcox.test(unlist(na.omit(
+  subset(
+    polyp2_obj$richness,
+    subset = tissue == "Fecal" &
+      former == 0,
+    select = richness
+  )
+)), unlist(na.omit(
+  subset(
+    polyp2_obj$richness,
+    subset = tissue == "Fecal" & former == 1,
+    select = richness
+  )
+))) #sig p = 0.003529 W = 1443.5
+
+# Oral
+
+wilcox.test(unlist(na.omit(
+  subset(
+    polyp2_obj$richness,
+    subset = tissue == "Oral" &
+      former == 0,
+    select = richness
+  )
+)), unlist(na.omit(
+  subset(
+    polyp2_obj$richness,
+    subset = tissue == "Oral" & former == 1,
+    select = richness
+  )
+))) # not sig p = 0.9333
+
+# Mucosal
+
+wilcox.test(unlist(na.omit(
+  subset(
+    polyp2_obj$richness,
+    subset = tissue == "Mucosal" &
+      former == 0,
+    select = richness
+  )
+)), unlist(na.omit(
+  subset(
+    polyp2_obj$richness,
+    subset = tissue == "Mucosal" & former == 1,
+    select = richness
+  )
+))) #not sig p = 0.5914
 
 
 # ANALYSIS: BETA DIVERSITY NMDS ---------------------------------------------
@@ -2367,5 +2489,300 @@ ggplot(data = as.data.frame(gerror.vec), aes(x = gerror.vec))+
   geom_histogram(binwidth = .05, color = "white")
 
 
+# ANALYSIS: MUCOSAL RANDOM FOREST WITH TOP 5or 10 ASV ---------------------
+top_mucosal_adenoma_asv.df <- mucosal_adenoma_asv.df[,c("seq6",
+                                                        "seq18",
+                                                        "seq53",
+                                                        "seq81",
+                                                        "seq9",
+                                                        "seq3",
+                                                        "seq218",
+                                                        "seq16",
+                                                        "seq29",
+                                                        "seq86"
+                                                        )]
 
-# SANDBOX -----------------------------------------------------------------
+set.seed(731)
+top_mucosal_former_asv.rf <- randomForest(x = top_mucosal_adenoma_asv.df,
+                                      y = factor(unlist(
+                                        subset(polyp2_obj$meta,
+                                               type == "Mucosal",
+                                               select = polyp)
+                                      )),
+                                      na.action = na.omit,
+                                      importance = T,
+                                      ntree =5000
+)
+
+top_mucosal_former_asv.rf
+#No. of variables tried at each split: 3
+#OOB estimate of  error rate: 7.47%
+# Confusion matrix:
+#      0   1 class.error
+# 0 134  19  0.12418301
+# 1   7 188  0.03589744
+
+#top 5
+
+top_mucosal_adenoma_asv.df <- mucosal_adenoma_asv.df[,c("seq6",
+                                                        "seq18",
+                                                        "seq53",
+                                                        "seq81",
+                                                        "seq9"
+                                                        )]
+
+set.seed(731)
+top_mucosal_former_asv.rf <- randomForest(x = top_mucosal_adenoma_asv.df,
+                                          y = factor(unlist(
+                                            subset(polyp2_obj$meta,
+                                                   type == "Mucosal",
+                                                   select = polyp)
+                                          )),
+                                          na.action = na.omit,
+                                          importance = T,
+                                          ntree =5000
+)
+
+top_mucosal_former_asv.rf
+# No. of variables tried at each split: 2
+
+#  OOB estimate of  error rate: 10.34%
+#  Confusion matrix:
+#      0   1 class.error
+#  0 131  22  0.14379085
+#  1  14 181  0.07179487
+
+
+# ANALYSIS: COMMUNITY LEVEL CORRELATION BETWEEN TISSUES -------------------
+
+fecal_cor_asv.df <-
+  polyp2_obj$data[which(rownames(polyp2_obj$data) %in%
+                          rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Fecal"),])), ]
+
+mucosal_cor_asv.df <-
+  polyp2_obj$data[which(rownames(polyp2_obj$data) %in%
+                          rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Mucosal"),])), ]
+
+oral_cor_asv.df <-
+  polyp2_obj$data[which(rownames(polyp2_obj$data) %in%
+                          rownames(polyp2_obj$meta[which(polyp2_obj$meta$type == "Oral"),])), ]
+
+
+
+#Get only those ids that are shared across all sample types
+shared.ids <- unique(polyp2_obj$meta[which(polyp2_obj$meta$type == "Mucosal"), "id"])
+shared.ids <-
+  shared.ids[which(shared.ids %in% unique(polyp2_obj$meta[which(polyp2_obj$meta$type == "Oral"), "id"]))]
+shared.ids <-
+  shared.ids[which(shared.ids %in% unique(polyp2_obj$meta[which(polyp2_obj$meta$type == "Fecal"), "id"]))]
+
+#now that shared.ids only contains ids that are present for all sample types,
+# we can make data frames with only those samples for correlations
+
+
+#For mucosal we need to first average the values for all samples. While there
+# exist more complex ways of doing this we will try to keep things simple here.
+df.nrow <- length(shared.ids)
+df.ncol <- ncol(polyp2_obj$data)
+mucosal_cor_asv.df <- matrix(nrow = df.nrow, ncol = df.ncol, NA )
+
+rownames(mucosal_cor_asv.df) <- paste0("s_",shared.ids)
+colnames(mucosal_cor_asv.df) <- colnames(polyp2_obj$data)
+
+for (i in shared.ids) {
+  ids <-
+    unlist(subset(polyp2_obj$meta,
+           subset = type == "Mucosal" & id == i,
+           select = "file_name"))
+
+  temp.df <-
+    polyp2_obj$data[which(rownames(polyp2_obj$data) %in% ids), ]
+
+  cmeans <- colMeans(temp.df)
+  rid <- paste0("s_", i)
+  mucosal_cor_asv.df[rid,] <- cmeans
+
+}
+
+
+# now we can do the same thing with fecal and oral samples without the averaging
+# because there is only a single sample per patient
+
+#start with fecal
+
+fecal_cor_asv.df <- matrix(nrow = df.nrow, ncol = df.ncol, NA )
+
+rownames(fecal_cor_asv.df) <- paste0("s_",shared.ids)
+colnames(fecal_cor_asv.df) <- colnames(polyp2_obj$data)
+
+
+for (i in shared.ids) {
+  ids <-
+    unlist(subset(polyp2_obj$meta,
+                  subset = type == "Fecal" & id == i,
+                  select = "file_name"))
+
+  temp.df <-
+    polyp2_obj$data[which(rownames(polyp2_obj$data) %in% ids), ]
+
+  cmeans <- colMeans(temp.df)
+  rid <- paste0("s_", i)
+  fecal_cor_asv.df[rid,] <- cmeans
+
+}
+
+
+#Now oral
+oral_cor_asv.df <- matrix(nrow = df.nrow, ncol = df.ncol, NA )
+
+rownames(oral_cor_asv.df) <- paste0("s_",shared.ids)
+colnames(oral_cor_asv.df) <- colnames(polyp2_obj$data)
+
+
+for (i in shared.ids) {
+  ids <-
+    unlist(subset(polyp2_obj$meta,
+                  subset = type == "Oral" & id == i,
+                  select = "file_name"))
+
+  temp.df <-
+    polyp2_obj$data[which(rownames(polyp2_obj$data) %in% ids), ]
+
+  cmeans <- colMeans(temp.df)
+  rid <- paste0("s_", i)
+  oral_cor_asv.df[rid,] <- cmeans
+
+}
+
+#now get rid of things that have all zeros across all samples
+
+m0 <- colnames( mucosal_cor_asv.df[,which(colSums(mucosal_cor_asv.df) == 0)] )
+f0 <- colnames( fecal_cor_asv.df[,which(colSums(fecal_cor_asv.df) == 0)] )
+o0 <- colnames( oral_cor_asv.df[,which(colSums(oral_cor_asv.df) == 0)] )
+
+#now get those that are in all lists
+a0 <- m0[which(m0 %in% f0)]
+a0 <- a0[which(a0 %in% o0)]
+
+#now filter dataframes
+
+mucosal_cor_asv.df <-
+  mucosal_cor_asv.df[,-which(colnames(mucosal_cor_asv.df) %in% a0)]
+
+fecal_cor_asv.df <-
+  fecal_cor_asv.df[,-which(colnames(fecal_cor_asv.df) %in% a0)]
+
+oral_cor_asv.df <-
+  oral_cor_asv.df[,-which(colnames(oral_cor_asv.df) %in% a0)]
+
+
+cor.df <- cbind(id      = colnames(fecal_cor_asv.df),
+                oral    = log2(colMeans(oral_cor_asv.df[]+1)),
+                mucosal = log2(colMeans(mucosal_cor_asv.df[]+1)),
+                fecal   = log2(colMeans(fecal_cor_asv.df[]+1))
+                ) #add one count to each row so that we can take the log
+
+cor.df         <- as.data.frame(cor.df)
+cor.df$oral    <- as.numeric(cor.df$oral)
+cor.df$fecal   <- as.numeric(cor.df$fecal)
+cor.df$mucosal <- as.numeric(cor.df$mucosal)
+rownames(cor.df) <- cor.df$id
+#now test um
+
+
+cor.test(cor.df$fecal, cor.df$mucosal) #strong correlation:0.78
+cor.test(cor.df$oral, cor.df$mucosal) #weak, but significant, correlation: 0.07
+
+
+
+mucosal_fecal.plot <- ggplot(cor.df,
+                             aes(x = fecal,
+                                 y = mucosal)
+                             )
+pdf("figs/mean_mucosal_fecal_cor.pdf")
+
+mucosal_fecal.plot +
+  geom_point(color = "steelblue", alpha = .3)+
+  geom_abline(slope = 1, intercept = 0)+
+  xlab(expression(paste("Fecal Count", s[L][o][g][2], sep=""))) +
+  ylab(expression(paste("Mucosal Count", s[L][o][g][2], sep=""))) +
+  theme(
+    text = element_text(size = 18),
+    panel.border     = element_rect(fill = NA,size = 1.2),
+    panel.grid.major = element_line(color = "grey97"),
+    panel.grid.minor = element_blank(),
+    panel.background = element_blank(),
+    axis.line = element_line(colour = "black"),
+    legend.key = element_blank(),
+    axis.text = element_text(color = "black"),
+    legend.title = element_blank(),
+    aspect.ratio = 1
+  )+
+  scale_x_continuous(expand = c(0.01,0.01), limits = c(0,10))+
+  scale_y_continuous(expand = c(0.01,0.01), limits = c(0,10))
+dev.off()
+
+mucosal_oral.plot <- ggplot(cor.df,
+                             aes(x = oral,
+                                 y = mucosal)
+)
+
+pdf("figs/mean_mucosal_oral_cor.pdf")
+
+mucosal_oral.plot +
+  geom_point(color = "steelblue", alpha = .3)+
+  geom_abline(slope = 1, intercept = 0)+
+  xlab(expression(paste("Oral Count", s[L][o][g][2], sep=""))) +
+  ylab(expression(paste("Mucosal Count", s[L][o][g][2], sep=""))) +
+  theme(
+    text = element_text(size = 18),
+    panel.border     = element_rect(fill = NA,size = 1.2),
+    panel.grid.major = element_line(color = "grey97"),
+    panel.grid.minor = element_blank(),
+    panel.background = element_blank(),
+    axis.line = element_line(colour = "black"),
+    legend.key = element_blank(),
+    axis.text = element_text(color = "black"),
+    legend.title = element_blank(),
+    aspect.ratio = 1
+  )+
+  scale_x_continuous(expand = c(0.01,0.01), limits = c(0,12))+
+  scale_y_continuous(expand = c(0.01,0.01), limits = c(0,12))
+dev.off()
+
+# ANALYSIS: INDIVIDUAL PATIENTS CORRELATION BETWEEN TISSUES -------------------
+
+# we can also look at how the individual correlations vary across individuals
+
+fecal_mucosal_cor.vec <- NULL
+fecal_mucosal_cor.pvec <- NULL
+
+for(i in 1:nrow(mucosal_cor_asv.df)){
+  t.cor <- cor.test(mucosal_cor_asv.df[i,], fecal_cor_asv.df[i,])
+  fecal_mucosal_cor.vec <- c(fecal_mucosal_cor.vec, t.cor$estimate)
+  fecal_mucosal_cor.pvec <- c(fecal_mucosal_cor.pvec, t.cor$p.value)
+}
+
+oral_mucosal_cor.vec <- NULL
+oral_mucosal_cor.pvec <- NULL
+
+for(i in 1:nrow(mucosal_cor_asv.df)){
+  t.cor <- cor.test(mucosal_cor_asv.df[i,], oral_cor_asv.df[i,])
+  oral_mucosal_cor.vec <- c(oral_mucosal_cor.vec, t.cor$estimate)
+  oral_mucosal_cor.pvec <- c(oral_mucosal_cor.pvec, t.cor$p.value)
+}
+
+
+# The distribution of individual correlations is pretty broad for both
+# fecal and oral samples but does it differ by former status
+
+formers <- subset(polyp2_obj$meta, subset = type == "Fecal")
+formers$nid <- paste0("s_", formers$id)
+rownames(formers) <- formers$nid
+formers <- formers[which(rownames(formers) %in% rownames(oral_cor_asv.df)),]
+formers <- formers[rownames(oral_cor_asv.df),]
+
+#no relationship between the degree of association and former status
+summary(lm(fecal_mucosal_cor.vec ~ formers$polyp))
+summary(lm(oral_mucosal_cor.vec ~ formers$polyp))
+

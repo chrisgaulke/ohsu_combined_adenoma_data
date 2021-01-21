@@ -237,7 +237,7 @@ combined_metadata$shortname <- names.df$adenoma.shortnames
 combined_metadata$type <- names.df$type
 
 
-#Now we have to add in some data for the mucosal samples because the havev some
+#Now we have to add in some data for the mucosal samples because the have some
 #unique characteristics
 
 adenoma_metadata.df <- read.table("/Users/cgaulke/Documents/research/ohsu_polyp_combined/metadata/OHSU_polyp2_basic_metadata_filtered.txt",
