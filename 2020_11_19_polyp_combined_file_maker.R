@@ -549,3 +549,10 @@ adenoma_sequence_stats.df <- adenoma_sequence_stats.df[which(rownames(adenoma_se
 #             row.names = T,
 #             col.names = T,
 #             sep = "\t")
+#
+# write.table(x = adenoma_asv.dict,
+#             file = "data/prepped_data/filtered_adenoma_sequence_lookup.txt",
+#                          quote = F,
+#                          row.names = F,
+#                          col.names = T,
+#                          sep = "\t")

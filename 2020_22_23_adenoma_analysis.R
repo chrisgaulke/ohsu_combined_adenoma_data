@@ -38,6 +38,7 @@ library(gplots)
 library(pROC)
 library(MASS)
 library(glmmTMB)
+library(scales)
 
 options("stringsAsFactors" = F)
 
@@ -1833,7 +1834,7 @@ nadenoma_test_all.plot +
   xlab("")+
   ylab("")
 
-# ANALYSIS: ASV MODEL AGGREGATION -------------------------------------
+# ANALYSIS: ASV MODEL AGGREGATION  -------------------------------------
 
 model_summary_asv.df <-
   as.data.frame(matrix(
@@ -1998,10 +1999,124 @@ asv_nadenoma_test_all.plot <- ggplot(asv_nadenoma_test_all.df,
                                          fill = est))
 asv_nadenoma_test_all.plot +
   geom_tile()+
-  geom_text(aes(label = sig),nudge_y = -.1,
-            size =6,
+ geom_text(aes(label = sig),nudge_y = -.1,
+           size =6,
+           color = "grey65")+
+  # geom_text(aes(label = sig, fontface= "bold",family = "sans"),nudge_y = -.5,
+  #           size =12,
+  #           color = "black")+
+  # geom_text(aes(label = sig,family = "sans"),nudge_y = -.5,
+  #           size =12,
+  #           color = "white")+
+  #
+    scale_fill_distiller(palette = "PRGn",
+                       limits= c(-10,20),
+                       oob=squish )+
+  theme(text = element_text(size=18, colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        panel.border     = element_rect(fill = NA),
+        axis.line = element_line(colour = "black"),
+        axis.text = element_text(colour = "black"),
+        legend.key = element_blank(),
+        legend.title = element_blank(),
+        legend.position = "top"
+  )+
+  xlab("")+
+  ylab("")+
+  scale_x_discrete(expand = c(0,0))+
+  scale_y_discrete(expand = c(0,0))
+dev.off()
+
+# ANALYSIS: TAXA VISUALIZATIONS ASV LOCATION ------------------------------
+
+asv_location_test.df <- subset(model_summary_asv.df,
+                                   test == "Location"
+)
+
+location_keeps.taxa <-
+  unlist(unique(subset(asv_location_test.df, qval < 0.1, select = taxa)))
+
+asv_location_test.df <-
+  asv_location_test.df[which(asv_location_test.df$taxa %in% location_keeps.taxa),]
+
+t.vec <- NULL
+for(i in 1:length(asv_location_test.df$taxa)){
+  t <- NULL
+  xdf <- polyp2_tax.df[(asv_location_test.df$taxa)[i],6:8]
+  if(is.na(xdf["Species"])){
+    if(is.na(xdf["Genus"])){
+      t <-  paste0(xdf["Family"], "(F)")
+    }else{
+      t <- paste0(xdf["Genus"], "(G)")
+    }
+  }else{
+    t <- paste0(xdf["Genus"]," ", xdf["Species"], "(S)")
+  }
+  t <- paste0(t, "-", (asv_location_test.df$taxa)[i])
+  t.vec <- c(t.vec, t)
+}
+asv_location_test.df$tax.name <- t.vec
+
+# this will be messy because I will need to make a data frame that includes the
+# info for all the different colon locations
+
+#summary(asv.models.obj$location["seq37"])
+tdf <- asv_location_test.df # make a temp df
+tdf$coef_p <- NA #make a column for the individual effect's p-val. I thought
+
+# I thought about just overwriting the other p-val but I think that info might
+# be useful to have at some point. So I will keep it.
+
+ntdf <- rbind(tdf, tdf)
+ntdf <- rbind(ntdf, tdf)
+ntdf <- rbind(ntdf, tdf)
+
+colnames(ntdf)[3] <- "location"
+colnames(ntdf)[5] <- "zvalue"
+
+ntdf$location <- rep(c("RC", "REC", "SGD", "TV"),
+                     times = c(5,5,5,5)
+                    )
+
+ntdf <- ntdf[order(ntdf$taxa), ]
+
+est.vec <- NULL
+z.vec   <- NULL
+p.vec   <- NULL
+
+
+for(i in asv_location_test.df$taxa){
+  temp.fit <- summary(asv.models.obj$location[[i]])
+  est.vec <- c(est.vec, unlist(temp.fit$coefficients$cond[2:5,1]))
+  z.vec    <- c(z.vec, unlist(temp.fit$coefficients$cond[2:5,3]))
+  p.vec    <- c(p.vec, unlist(temp.fit$coefficients$cond[2:5,4]))
+}
+
+ntdf$est <- est.vec
+ntdf$zvalue <- z.vec
+ntdf$coef_p <- p.vec
+asv_location_test.df <- ntdf
+
+ntdf <- NULL
+
+asv_location_test.df$sig <-
+  sapply(asv_location_test.df$coef_p,
+         FUN = function(x){if(x < 0.05 ){print("*")}else{print("")}}
+  )
+
+
+pdf("figs/asv_models_sig_location.pdf")
+asv_location_test_all.plot <- ggplot(asv_location_test.df,
+                                     aes(x = location,
+                                         y = tax.name,
+                                         fill = est))
+asv_location_test_all.plot +
+  geom_tile()+
+  geom_text(aes(label = sig, fontface= "bold",family = "sans"),nudge_y = -.1,
+            size =12,
             color = "grey65")+
-  #coord_flip()+
   scale_fill_distiller(palette = "PRGn",
                        limits= c(-10,20),
                        oob=squish )+
@@ -2489,7 +2604,7 @@ ggplot(data = as.data.frame(gerror.vec), aes(x = gerror.vec))+
   geom_histogram(binwidth = .05, color = "white")
 
 
-# ANALYSIS: MUCOSAL RANDOM FOREST WITH TOP 5or 10 ASV ---------------------
+# ANALYSIS: MUCOSAL RANDOM FOREST WITH TOP 5 or 10 ASVs -------------------
 top_mucosal_adenoma_asv.df <- mucosal_adenoma_asv.df[,c("seq6",
                                                         "seq18",
                                                         "seq53",
@@ -2689,6 +2804,33 @@ cor.df$mucosal <- as.numeric(cor.df$mucosal)
 rownames(cor.df) <- cor.df$id
 #now test um
 
+summary(lm(cor.df$mucosal ~cor.df$fecal))
+# Coefficients:
+#   Estimate Std. Error t value Pr(>|t|)
+# (Intercept)  0.061847   0.008576   7.212 6.29e-13 ***
+#   cor.df$fecal 0.708865   0.007649  92.679  < 2e-16 ***
+#   ---
+#   Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+#
+# Residual standard error: 0.5822 on 5367 degrees of freedom
+# Multiple R-squared:  0.6154,	Adjusted R-squared:  0.6154
+# F-statistic:  8589 on 1 and 5367 DF,  p-value: < 2.2e-16
+#
+
+
+summary(lm(cor.df$mucosal ~cor.df$oral))
+
+# Coefficients:
+#   Estimate Std. Error t value Pr(>|t|)
+#  (Intercept)  0.34495    0.01311  26.316  < 2e-16 ***
+#   cor.df$oral  0.09396    0.01711   5.491 4.17e-08 ***
+#   ---
+#   Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+#
+# Residual standard error: 0.9362 on 5367 degrees of freedom
+# Multiple R-squared:  0.005587,	Adjusted R-squared:  0.005402
+# F-statistic: 30.15 on 1 and 5367 DF,  p-value: 4.175e-08
+
 
 cor.test(cor.df$fecal, cor.df$mucosal) #strong correlation:0.78
 cor.test(cor.df$oral, cor.df$mucosal) #weak, but significant, correlation: 0.07
@@ -2699,11 +2841,11 @@ mucosal_fecal.plot <- ggplot(cor.df,
                              aes(x = fecal,
                                  y = mucosal)
                              )
-pdf("figs/mean_mucosal_fecal_cor.pdf")
+jpeg("figs/mean_mucosal_fecal_cor.jpeg",res = 300, width = 7,height = 7,units = "in")
 
 mucosal_fecal.plot +
-  geom_point(color = "steelblue", alpha = .3)+
-  geom_abline(slope = 1, intercept = 0)+
+  geom_point(color = "steelblue", alpha = .3, size = 4)+
+  geom_smooth(method = "lm", color = "black",fullrange = T, se =F  )+
   xlab(expression(paste("Fecal Count", s[L][o][g][2], sep=""))) +
   ylab(expression(paste("Mucosal Count", s[L][o][g][2], sep=""))) +
   theme(
@@ -2727,11 +2869,11 @@ mucosal_oral.plot <- ggplot(cor.df,
                                  y = mucosal)
 )
 
-pdf("figs/mean_mucosal_oral_cor.pdf")
+jpeg("figs/mean_mucosal_oral_cor.jpeg",res = 300, width = 7,height = 7,units = "in")
 
 mucosal_oral.plot +
-  geom_point(color = "steelblue", alpha = .3)+
-  geom_abline(slope = 1, intercept = 0)+
+  geom_point(color = "steelblue", alpha = .3, size = 4)+
+  geom_smooth(method = "lm", color = "black",fullrange = T, se =F  )+
   xlab(expression(paste("Oral Count", s[L][o][g][2], sep=""))) +
   ylab(expression(paste("Mucosal Count", s[L][o][g][2], sep=""))) +
   theme(
@@ -2774,7 +2916,7 @@ for(i in 1:nrow(mucosal_cor_asv.df)){
 
 
 # The distribution of individual correlations is pretty broad for both
-# fecal and oral samples but does it differ by former status
+# fecal and oral samples but doesn't differ by former status
 
 formers <- subset(polyp2_obj$meta, subset = type == "Fecal")
 formers$nid <- paste0("s_", formers$id)
