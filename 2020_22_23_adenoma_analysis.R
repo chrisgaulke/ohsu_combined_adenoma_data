@@ -39,6 +39,7 @@ library(pROC)
 library(MASS)
 library(glmmTMB)
 library(scales)
+library(VennDiagram)
 
 options("stringsAsFactors" = F)
 
@@ -1999,18 +2000,15 @@ asv_nadenoma_test_all.plot <- ggplot(asv_nadenoma_test_all.df,
                                          fill = est))
 asv_nadenoma_test_all.plot +
   geom_tile()+
- geom_text(aes(label = sig),nudge_y = -.1,
+ geom_text(aes(label = sig,
+               fontface= "bold",
+               family = "sans"),
+           nudge_y = -.2,
            size =6,
-           color = "grey65")+
-  # geom_text(aes(label = sig, fontface= "bold",family = "sans"),nudge_y = -.5,
-  #           size =12,
-  #           color = "black")+
-  # geom_text(aes(label = sig,family = "sans"),nudge_y = -.5,
-  #           size =12,
-  #           color = "white")+
-  #
-    scale_fill_distiller(palette = "PRGn",
-                       limits= c(-10,20),
+           color = "grey65"
+           )+
+  scale_fill_distiller(palette = "PRGn",
+                       limits= c(-20,20),
                        oob=squish )+
   theme(text = element_text(size=18, colour = "black"),
         panel.grid.major = element_blank(),
@@ -2077,7 +2075,10 @@ colnames(ntdf)[3] <- "location"
 colnames(ntdf)[5] <- "zvalue"
 
 ntdf$location <- rep(c("RC", "REC", "SGD", "TV"),
-                     times = c(5,5,5,5)
+                     times = c(length(location_keeps.taxa),
+                               length(location_keeps.taxa),
+                               length(location_keeps.taxa),
+                               length(location_keeps.taxa))
                     )
 
 ntdf <- ntdf[order(ntdf$taxa), ]
@@ -2087,7 +2088,7 @@ z.vec   <- NULL
 p.vec   <- NULL
 
 
-for(i in asv_location_test.df$taxa){
+for(i in unique(ntdf$taxa)){
   temp.fit <- summary(asv.models.obj$location[[i]])
   est.vec <- c(est.vec, unlist(temp.fit$coefficients$cond[2:5,1]))
   z.vec    <- c(z.vec, unlist(temp.fit$coefficients$cond[2:5,3]))
@@ -2118,7 +2119,7 @@ asv_location_test_all.plot +
             size =12,
             color = "grey65")+
   scale_fill_distiller(palette = "PRGn",
-                       limits= c(-10,20),
+                       limits= c(-20,20),
                        oob=squish )+
   theme(text = element_text(size=18, colour = "black"),
         panel.grid.major = element_blank(),
@@ -2136,6 +2137,117 @@ asv_location_test_all.plot +
   scale_x_discrete(expand = c(0,0))+
   scale_y_discrete(expand = c(0,0))
 dev.off()
+
+
+# ANALYSIS: TAXA VISUALIZATIONS GENUS LOCATION ------------------------------
+
+genus_location_test.df <- subset(model_summary_genus.df,
+                               test == "Location"
+)
+
+glocation_keeps.taxa <-
+  unlist(unique(subset(genus_location_test.df, qval < 0.2, select = taxa)))
+
+genus_location_test.df <-
+  genus_location_test.df[which(genus_location_test.df$taxa %in% glocation_keeps.taxa),]
+
+genus_location_test.df$tax.name <- genus_location_test.df$taxa
+
+
+# this will be messy because I will need to make a data frame that includes the
+# info for all the different colon locations
+
+tdf <- data.frame(taxa <- rep(genus_location_test.df$taxa,
+                              4),
+                  est <- rep(genus_location_test.df$est,
+                              4),
+                  t_stat <- rep(genus_location_test.df$stat_t_or_z,
+                              4),
+                  pval <- rep(genus_location_test.df$pval,
+                                4),
+                  qval <- rep(genus_location_test.df$qval,
+                                4),
+                  tax.name <- rep(genus_location_test.df$tax.name,
+                                4)
+                  )
+colnames(tdf) <- c("taxa","est", "t_stat", "pval", "qval", "tax.name")
+tdf$coef_p   <- NA #make a column for the individual effect's p-val. I thought
+tdf$location <- NA
+tdf$zvalue   <- NA
+
+ntdf <- tdf
+
+
+# colnames(ntdf)[3] <- "location"
+# colnames(ntdf)[5] <- "zvalue"
+
+ntdf$location <- rep(c("RC", "REC", "SGD", "TV"),
+                     times = c(length(glocation_keeps.taxa),
+                               length(glocation_keeps.taxa),
+                               length(glocation_keeps.taxa),
+                               length(glocation_keeps.taxa))
+)
+
+ntdf <- ntdf[order(ntdf$taxa), ]
+
+est.vec <- NULL
+z.vec   <- NULL
+p.vec   <- NULL
+
+
+for(i in unique(ntdf$taxa)){
+  print(i)
+  temp.fit <- summary(genus.models.obj$location[[i]])
+  est.vec <- c(est.vec, unlist(temp.fit$coefficients$cond[2:5,1]))
+  z.vec    <- c(z.vec, unlist(temp.fit$coefficients$cond[2:5,3]))
+  p.vec    <- c(p.vec, unlist(temp.fit$coefficients$cond[2:5,4]))
+}
+
+ntdf$est <- est.vec
+ntdf$zvalue <- z.vec
+ntdf$coef_p <- p.vec
+genus_location_test.df <- ntdf
+
+ntdf <- NULL
+tdf <- NULL
+
+genus_location_test.df$sig <-
+  sapply(genus_location_test.df$coef_p,
+         FUN = function(x){if(x < 0.05 ){print("*")}else{print("")}}
+  )
+
+
+pdf("figs/genus_models_sig_location_q2.pdf")
+genus_location_test_all.plot <- ggplot(genus_location_test.df,
+                                     aes(x = location,
+                                         y = tax.name,
+                                         fill = est))
+genus_location_test_all.plot +
+  geom_tile()+
+  geom_text(aes(label = sig, fontface= "bold",family = "sans"),nudge_y = -.25,
+            size =12,
+            color = "grey65")+
+  scale_fill_distiller(palette = "PRGn",
+                       limits= c(-20,20),
+                       oob=squish
+                       )+
+  theme(text = element_text(size=18, colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        panel.border     = element_rect(fill = NA),
+        axis.line = element_line(colour = "black"),
+        axis.text = element_text(colour = "black"),
+        legend.key = element_blank(),
+        legend.title = element_blank(),
+        legend.position = "top"
+  )+
+  xlab("")+
+  ylab("")+
+  scale_x_discrete(expand = c(0,0))+
+  scale_y_discrete(expand = c(0,0))
+dev.off()
+
 
 # ANALYSIS: RANDOM FORESTS ------------------------------------------------
 
@@ -2927,4 +3039,57 @@ formers <- formers[rownames(oral_cor_asv.df),]
 #no relationship between the degree of association and former status
 summary(lm(fecal_mucosal_cor.vec ~ formers$polyp))
 summary(lm(oral_mucosal_cor.vec ~ formers$polyp))
+
+
+# ANALYSIS: ASV  OVERLAP BETWEEN MUCOSAL AND TISSUE SAMPLES -------------------
+
+mucosal_asv.names <-
+  colnames(mucosal_cor_asv.df[, which(colSums(mucosal_cor_asv.df) > 0)])
+fecal_asv.names <-
+  colnames(fecal_cor_asv.df[, which(colSums(fecal_cor_asv.df) > 0)])
+oral_asv.names <-
+  colnames(oral_cor_asv.df[, which(colSums(oral_cor_asv.df) > 0)])
+
+#Mucosal vs Feces or Oral
+length(mucosal_asv.names[which(mucosal_asv.names %in% fecal_asv.names)]) / length(mucosal_asv.names) # 0.399222
+length(mucosal_asv.names[which(mucosal_asv.names %in% oral_asv.names)]) / length(mucosal_asv.names) # 0.08679796
+
+#Feces or Oral vs Mucosal
+length(fecal_asv.names[which(fecal_asv.names %in% mucosal_asv.names)]) / length(fecal_asv.names) # 0.7062366
+length(oral_asv.names[which(oral_asv.names %in% mucosal_asv.names)]) / length(oral_asv.names) # 0.3830472
+
+venn.diagram(x = list(mucosal_asv.names,fecal_asv.names,oral_asv.names),
+             category.names = c("Mucosal", "Fecal", "Oral"),
+             #filename = NULL,
+             filename = "figs/shared_asv_by_tissue_venn.png",
+             #output=TRUE,
+
+             # Output features
+             imagetype="png" ,
+             height = 480 ,
+             width = 480 ,
+             resolution = 300,
+             compression = "lzw",
+
+             # Circles
+             lwd = 1,
+             fill = c("#D95F02","#1B9E77", "#7570B3"),
+
+             # Numbers
+             cex = .6,
+             fontface = "bold",
+             fontfamily = "sans",
+
+             # Set names
+             cat.cex = 0.6,
+             cat.fontface = "bold",
+             cat.default.pos = "outer",
+             cat.pos = c(-27, 27, 135),
+             cat.dist = c(0.055, 0.055, 0.085),
+             cat.fontfamily = "sans",
+             rotation = 1
+
+             )
+
+
 
