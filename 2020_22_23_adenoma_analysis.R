@@ -705,6 +705,9 @@ lmrich_fit1 <- glm(richness ~
                    data = na.omit(subset(polyp2_obj$richness, tissue == "Fecal")))
 summary(lmrich_fit1)#sig
 
+# note that if you remove the samples with over 10 polyps (some might call these
+# outliers) the model is still significant.
+
 #oral former
 # Note: These models only include main effects because there aren't multiple
 # samples for each individual
@@ -2110,7 +2113,8 @@ asv_location_test.df$sig <-
 
 pdf("figs/asv_models_sig_location.pdf")
 asv_location_test_all.plot <- ggplot(asv_location_test.df,
-                                     aes(x = location,
+                                     aes(x = factor(location,
+                                          levels = c("RC", "TV", "SGD","REC")),
                                          y = tax.name,
                                          fill = est))
 asv_location_test_all.plot +
@@ -2219,7 +2223,8 @@ genus_location_test.df$sig <-
 
 pdf("figs/genus_models_sig_location_q2.pdf")
 genus_location_test_all.plot <- ggplot(genus_location_test.df,
-                                     aes(x = location,
+                                     aes(x = factor(location,
+                                            levels = c("RC", "TV", "SGD","REC")),
                                          y = tax.name,
                                          fill = est))
 genus_location_test_all.plot +
