@@ -2675,6 +2675,94 @@ mean(error.vec)
 ggplot(data = as.data.frame(error.vec), aes(x = error.vec))+
   geom_histogram(binwidth = .05, color = "white")
 
+# ANALYSIS: RANDOM FOREST WITH LEAVE 20% OUT ASV  -----------------------------
+
+set.seed(731)
+
+error_8.vec <- NULL
+for (i in 1:1000) {
+  model <-
+    sample(row.names(mucosal_adenoma_asv.df),
+           size = round(nrow(mucosal_adenoma_asv.df) * .8))
+  cs <-
+    row.names(mucosal_adenoma_asv.df)[-which(row.names(mucosal_adenoma_asv.df) %in% model)]
+
+
+  #make the train set
+  mucosal_asv_model.rf <-
+    mucosal_adenoma_asv.df[which(rownames(mucosal_adenoma_asv.df) %in% model), ]
+
+  mucosal_asv_meta_model.rf <-
+    polyp2_obj$meta[which(rownames(polyp2_obj$meta) %in% model), ]
+
+  #make the test set
+  mucosal_asv_cv.rf <-
+    mucosal_adenoma_asv.df[which(rownames(mucosal_adenoma_asv.df) %in% cs), ]
+
+  mucosal_asv_meta_cv.rf <-
+    polyp2_obj$meta[which(rownames(polyp2_obj$meta) %in% cs), ]
+
+  x <- randomForest(x = mucosal_asv_model.rf,
+                    y = factor(mucosal_asv_meta_model.rf$polyp))
+
+  y <- predict(x, newdata = mucosal_asv_cv.rf)
+
+  z <-
+    1 - (sum(y == factor(mucosal_asv_meta_cv.rf$polyp)) / length(y))
+  error_8.vec <- c(error_8.vec, z)
+}
+
+mean(error_8.vec)
+
+ggplot(data = as.data.frame(error_8.vec), aes(x = error_8.vec))+
+  geom_histogram(binwidth = .05, color = "white")
+
+
+
+# ANALYSIS: RANDOM FOREST WITH LEAVE HALF OUT ASV  -----------------------------
+
+set.seed(731)
+
+error_half.vec <- NULL
+for (i in 1:1000) {
+  model <-
+    sample(row.names(mucosal_adenoma_asv.df),
+           size = round(nrow(mucosal_adenoma_asv.df) * .5))
+  cs <-
+    row.names(mucosal_adenoma_asv.df)[-which(row.names(mucosal_adenoma_asv.df) %in% model)]
+
+
+  #make the train set
+  mucosal_asv_model.rf <-
+    mucosal_adenoma_asv.df[which(rownames(mucosal_adenoma_asv.df) %in% model), ]
+
+  mucosal_asv_meta_model.rf <-
+    polyp2_obj$meta[which(rownames(polyp2_obj$meta) %in% model), ]
+
+  #make the test set
+  mucosal_asv_cv.rf <-
+    mucosal_adenoma_asv.df[which(rownames(mucosal_adenoma_asv.df) %in% cs), ]
+
+  mucosal_asv_meta_cv.rf <-
+    polyp2_obj$meta[which(rownames(polyp2_obj$meta) %in% cs), ]
+
+  x <- randomForest(x = mucosal_asv_model.rf,
+                    y = factor(mucosal_asv_meta_model.rf$polyp))
+
+  y <- predict(x, newdata = mucosal_asv_cv.rf)
+
+  z <-
+    1 - (sum(y == factor(mucosal_asv_meta_cv.rf$polyp)) / length(y))
+  error_half.vec <- c(error_half.vec, z)
+}
+
+mean(error_half.vec)
+
+ggplot(data = as.data.frame(error_half.vec), aes(x = error_half.vec))+
+  geom_histogram(binwidth = .05, color = "white")
+
+
+
 # ANALYSIS: RANDOM FOREST WITH LEAVE ONE OUT GENUS ---------------------------
 
 # Although over fitting is less of a problem with random forest I will still
@@ -3097,4 +3185,60 @@ venn.diagram(x = list(mucosal_asv.names,fecal_asv.names,oral_asv.names),
              )
 
 
+# Bowel prep fisher test ---------------------------------------------------
 
+z.meta <- polyp2_obj$meta[,c("id","Prep", "polyp")]
+z.meta <- na.omit(z.meta)
+
+keeps.meta <- NULL
+meta.ids <- unique(z.meta$id)
+
+for(i in meta.ids){
+  l.vec <- rownames(z.meta[which(z.meta$id == i),])
+  keeps.meta <- c(keeps.meta, l.vec[1])
+
+}
+
+z.meta <- z.meta[which(rownames(z.meta) %in% keeps.meta),]
+
+z.prep <- rbind(table(z.meta[which(z.meta$polyp == 1), "Prep"]),
+                table(z.meta[which(z.meta$polyp == 0), "Prep"]))
+
+fisher.test(z.prep) # p = 1
+
+
+z.prep <- rbind(c(25,32), c(15,20))
+
+fisher.test(z.prep) # This is prep 3 vs not 3 in case and controls; p = 1
+
+#This indicates there is no difference in prep frequency across formers and
+# non formers
+
+# Retrospective power analysis ----------------------------------------------
+
+library(pwr)
+
+#power 80%
+my.seq <- seq(from = 0.1, to = 0.3, by = .05)
+my.sample_size <- NULL
+
+for(i in my.seq){
+  my.sample_size <- c(my.sample_size,
+          pwr.f2.test(u=2, f2 = i/(1-i), sig.level = .05, power =.8)$v
+  )
+}
+
+my.sample_size
+
+#power 90%
+
+
+my.sample_size <- NULL
+
+for(i in my.seq){
+  my.sample_size <- c(my.sample_size,
+                      pwr.f2.test(u=2, f2 = i/(1-i), sig.level = .05, power =.9)$v
+  )
+}
+
+my.sample_size
